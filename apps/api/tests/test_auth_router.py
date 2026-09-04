@@ -82,3 +82,28 @@ def test_login_is_rate_limited_after_five_attempts_per_minute(client):
     )
 
     assert response.status_code == 429
+
+
+def test_me_returns_the_current_user_for_a_valid_token(client):
+    register_response = client.post(
+        "/auth/register",
+        json={"email": "erin@pytest.local", "auth_key": _random_auth_key()},
+    )
+    token = register_response.json()["access_token"]
+
+    response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    assert response.json()["email"] == "erin@pytest.local"
+
+
+def test_me_rejects_a_request_with_no_token(client):
+    response = client.get("/auth/me")
+
+    assert response.status_code == 401
+
+
+def test_me_rejects_an_invalid_token(client):
+    response = client.get("/auth/me", headers={"Authorization": "Bearer not-a-real-token"})
+
+    assert response.status_code == 401
