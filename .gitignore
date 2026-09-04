@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Environment / secrets — never commit real values
+.env
+.env.local
+
+# Editors / OS
+.DS_Store
