@@ -95,6 +95,7 @@ def test_me_returns_the_current_user_for_a_valid_token(client):
 
     assert response.status_code == 200
     assert response.json()["email"] == "erin@pytest.local"
+    assert "hashed_password" not in response.json()
 
 
 def test_me_rejects_a_request_with_no_token(client):
@@ -107,3 +108,15 @@ def test_me_rejects_an_invalid_token(client):
     response = client.get("/auth/me", headers={"Authorization": "Bearer not-a-real-token"})
 
     assert response.status_code == 401
+
+
+def test_register_validation_error_does_not_echo_the_rejected_auth_key(client):
+    rejected_auth_key = "hunter2-my-actual-master-password"
+
+    response = client.post(
+        "/auth/register",
+        json={"email": "frank@pytest.local", "auth_key": rejected_auth_key},
+    )
+
+    assert response.status_code == 422
+    assert rejected_auth_key not in response.text

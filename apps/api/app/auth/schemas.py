@@ -15,6 +15,18 @@ class AuthCredentials(BaseModel):
         normalized = value.strip().lower()
         if "@" not in normalized or " " in normalized or not (3 <= len(normalized) <= 255):
             raise ValueError("email must be a valid email address")
+        # The email is used as the salt for deriving both the login credential
+        # and the vault-encryption key (see project spec). "Lowercase" is not
+        # identical across client languages for non-ASCII characters (e.g.
+        # Turkish dotted/dotless I, German ß, combining characters) — if a
+        # future client normalized the same non-ASCII email differently than
+        # it was normalized at account-creation time, it would derive a
+        # different, unrecoverable vault-encryption key. Restricting emails to
+        # ASCII makes "lowercase" unambiguous across every client language.
+        # Non-ASCII email support is a deliberate, accepted out-of-scope
+        # trade-off for now (see project SDD ledger), not a bug to design around.
+        if not normalized.isascii():
+            raise ValueError("email must contain only ASCII characters")
         return normalized
 
     @field_validator("auth_key")

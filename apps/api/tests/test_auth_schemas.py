@@ -40,3 +40,8 @@ def test_register_request_rejects_an_email_without_an_at_symbol():
 def test_login_request_applies_the_same_validation_as_register_request():
     with pytest.raises(ValidationError):
         LoginRequest(email="not-an-email", auth_key=VALID_AUTH_KEY)
+
+
+def test_register_request_rejects_a_non_ascii_email():
+    with pytest.raises(ValidationError):
+        RegisterRequest(email="café@example.com", auth_key=VALID_AUTH_KEY)
