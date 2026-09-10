@@ -6,11 +6,13 @@ from slowapi.errors import RateLimitExceeded
 
 from app.auth.router import router as auth_router
 from app.core.rate_limit import limiter
+from app.vault.router import router as vault_router
 
 app = FastAPI(title="Password Manager API")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.include_router(auth_router)
+app.include_router(vault_router)
 
 
 @app.exception_handler(RequestValidationError)

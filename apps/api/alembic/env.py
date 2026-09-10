@@ -6,6 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from app.auth.models import User  # noqa: F401 — registers the model on Base.metadata
 from app.core.config import get_settings
 from app.db.base import Base
+from app.vault.models import VaultEntry  # noqa: F401 — registers the model on Base.metadata
 
 config = context.config
 if config.config_file_name is not None:
