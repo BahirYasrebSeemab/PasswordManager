@@ -1,6 +1,11 @@
 import base64
 import os
 
+from sqlalchemy import select
+
+from app.auth.models import User
+from app.vault.models import VaultEntry
+
 
 def _random_auth_key() -> str:
     return base64.b64encode(os.urandom(32)).decode()
@@ -120,3 +125,54 @@ def test_register_validation_error_does_not_echo_the_rejected_auth_key(client):
 
     assert response.status_code == 422
     assert rejected_auth_key not in response.text
+
+
+def test_delete_account_removes_the_user_and_their_vault_entries(client, db_session):
+    auth_key = _random_auth_key()
+    register_response = client.post("/auth/register", json={"email": "gina@pytest.local", "auth_key": auth_key})
+    token = register_response.json()["access_token"]
+    client.post("/vault", json={"ciphertext": "irrelevant-ciphertext"}, headers={"Authorization": f"Bearer {token}"})
+    user_id = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"}).json()["id"]
+
+    response = client.request("DELETE", "/auth/me", json={"auth_key": auth_key}, headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 204
+    assert db_session.get(User, user_id) is None
+    assert db_session.scalars(select(VaultEntry).where(VaultEntry.user_id == user_id)).first() is None
+
+
+def test_delete_account_fails_with_the_wrong_auth_key(client, db_session):
+    auth_key = _random_auth_key()
+    register_response = client.post("/auth/register", json={"email": "henry@pytest.local", "auth_key": auth_key})
+    token = register_response.json()["access_token"]
+    user_id = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"}).json()["id"]
+
+    response = client.request(
+        "DELETE", "/auth/me", json={"auth_key": _random_auth_key()}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 401
+    assert db_session.get(User, user_id) is not None
+
+
+def test_delete_account_requires_a_valid_token(client):
+    response = client.request("DELETE", "/auth/me", json={"auth_key": _random_auth_key()})
+
+    assert response.status_code == 401
+
+
+def test_delete_account_is_rate_limited_after_five_attempts_per_minute(client):
+    auth_key = _random_auth_key()
+    register_response = client.post("/auth/register", json={"email": "ivan@pytest.local", "auth_key": auth_key})
+    token = register_response.json()["access_token"]
+
+    for _ in range(5):
+        client.request(
+            "DELETE", "/auth/me", json={"auth_key": _random_auth_key()}, headers={"Authorization": f"Bearer {token}"}
+        )
+
+    response = client.request(
+        "DELETE", "/auth/me", json={"auth_key": _random_auth_key()}, headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 429

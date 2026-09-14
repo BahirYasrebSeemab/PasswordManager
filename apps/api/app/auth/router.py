@@ -4,11 +4,12 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.auth.models import User
-from app.auth.schemas import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from app.auth.schemas import AccountDeleteRequest, LoginRequest, RegisterRequest, TokenResponse, UserResponse
 from app.auth.security import create_access_token
 from app.core.rate_limit import limiter
 from app.db.session import get_db
 from app.security import hash_password, verify_password
+from app.vault.models import VaultEntry
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -64,3 +65,18 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
 @router.get("/me", response_model=UserResponse)
 def read_current_user(current_user: User = Depends(get_current_user)) -> UserResponse:
     return UserResponse.model_validate(current_user)
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/minute")
+def delete_account(
+    request: Request,
+    payload: AccountDeleteRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    if not verify_password(payload.auth_key, current_user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password")
+    db.query(VaultEntry).filter(VaultEntry.user_id == current_user.id).delete()
+    db.delete(current_user)
+    db.commit()

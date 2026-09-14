@@ -5,6 +5,16 @@ from pydantic import BaseModel, field_validator
 AUTH_KEY_BYTE_LENGTH = 32
 
 
+def _decode_auth_key(value: str) -> str:
+    try:
+        decoded = base64.b64decode(value, validate=True)
+    except ValueError as exc:
+        raise ValueError("auth_key must be valid base64") from exc
+    if len(decoded) != AUTH_KEY_BYTE_LENGTH:
+        raise ValueError(f"auth_key must decode to exactly {AUTH_KEY_BYTE_LENGTH} bytes")
+    return value
+
+
 class AuthCredentials(BaseModel):
     email: str
     auth_key: str
@@ -32,13 +42,7 @@ class AuthCredentials(BaseModel):
     @field_validator("auth_key")
     @classmethod
     def validate_auth_key(cls, value: str) -> str:
-        try:
-            decoded = base64.b64decode(value, validate=True)
-        except ValueError as exc:
-            raise ValueError("auth_key must be valid base64") from exc
-        if len(decoded) != AUTH_KEY_BYTE_LENGTH:
-            raise ValueError(f"auth_key must decode to exactly {AUTH_KEY_BYTE_LENGTH} bytes")
-        return value
+        return _decode_auth_key(value)
 
 
 class RegisterRequest(AuthCredentials):
@@ -47,6 +51,15 @@ class RegisterRequest(AuthCredentials):
 
 class LoginRequest(AuthCredentials):
     pass
+
+
+class AccountDeleteRequest(BaseModel):
+    auth_key: str
+
+    @field_validator("auth_key")
+    @classmethod
+    def validate_auth_key(cls, value: str) -> str:
+        return _decode_auth_key(value)
 
 
 class TokenResponse(BaseModel):
