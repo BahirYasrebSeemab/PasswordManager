@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import { saveSession, loadSession, updateAccessToken, clearSession } from "./session";
+import { saveSession, loadSession, updateAccessToken, clearSession, shouldPersistSession } from "./session";
 
 jest.mock("expo-secure-store");
 
@@ -64,4 +64,20 @@ test("clearSession removes all stored values", async () => {
   await clearSession();
 
   expect(await loadSession()).toBeNull();
+});
+
+// NOTE: deviates from the brief's `const { shouldPersistSession } = await
+// import("./session")`. That crashes in THIS repo with "TypeError: A dynamic
+// import callback was invoked without --experimental-vm-modules" — verified
+// in isolation, unrelated to whether shouldPersistSession is exported.
+// babel-preset-expo (this project's babel config) doesn't transform
+// import() to a require()-based interop for Jest's CJS runtime, and Jest
+// itself only supports native dynamic import under --experimental-vm-modules
+// (which this project's jest config does not enable). The module is already
+// statically imported above, so asserting on that binding exercises the same
+// "is exported and callable" behavior without the incompatible dynamic
+// import. Same class of tooling deviation as the AppState.addEventListener
+// note near the top of AuthContext.test.tsx.
+test("shouldPersistSession is exported and callable", async () => {
+  expect(typeof shouldPersistSession).toBe("function");
 });

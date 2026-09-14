@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { bytesToBase64, base64ToBytes } from "@/crypto/base64";
+import { getBiometricEnabled } from "@/settings/preferences";
 
 const KEYS = {
   vaultKey: "vault_key",
@@ -15,6 +16,18 @@ export interface StoredSession {
   authKey: Uint8Array;
   accessToken: string;
   email: string;
+}
+
+// requireAuthentication: true (used below) specifically requires biometric
+// enrollment — SecureStore.canUseBiometricAuthentication() returns false
+// whenever it isn't set up, and saveSession/loadSession would otherwise
+// fail outright on such a device. Callers must check this first and skip
+// persisting entirely when it's false, rather than calling saveSession with
+// requireAuthentication on a device that can't satisfy it.
+export async function shouldPersistSession(): Promise<boolean> {
+  const hasBiometric = SecureStore.canUseBiometricAuthentication();
+  const userWantsIt = await getBiometricEnabled();
+  return hasBiometric && userWantsIt;
 }
 
 export async function saveSession(session: StoredSession): Promise<void> {

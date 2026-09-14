@@ -46,6 +46,12 @@ jest.mock("@/crypto/deriveKeys", () => ({
     authKey: new Uint8Array(32).fill(2),
   })),
 }));
+jest.mock("@/settings/preferences", () => ({
+  getBiometricEnabled: jest.fn(),
+  setBiometricEnabled: jest.fn().mockResolvedValue(undefined),
+  getAutoLockSeconds: jest.fn().mockResolvedValue(30),
+  setAutoLockSeconds: jest.fn().mockResolvedValue(undefined),
+}));
 
 function Probe() {
   const auth = useAuth();
@@ -69,6 +75,7 @@ beforeEach(() => {
   // test below re-arms the authApi/session mocks it needs explicitly, so
   // this is the correct, safe choice here.
   jest.clearAllMocks();
+  (session.shouldPersistSession as jest.Mock).mockResolvedValue(true);
 });
 
 test("starts in 'locked' status when no stored session exists", async () => {
@@ -428,4 +435,91 @@ test("auto-lock: backgrounding for EXACTLY 30s and returning to active locks (bo
   jest.useRealTimers();
 
   expect(screen.getByTestId("status").props.children).toBe("locked");
+});
+
+test("register() does not persist a session when shouldPersistSession() resolves false", async () => {
+  (session.loadSession as jest.Mock).mockResolvedValue(null);
+  (session.shouldPersistSession as jest.Mock).mockResolvedValue(false);
+  (authApi.register as jest.Mock).mockResolvedValue({ access_token: "tok", token_type: "bearer" });
+  (authApi.getMe as jest.Mock).mockResolvedValue({ id: 1, email: "test@example.com" });
+
+  let auth: ReturnType<typeof useAuth> | undefined;
+  function Capture() {
+    auth = useAuth();
+    return <Probe />;
+  }
+
+  await render(
+    <AuthProvider>
+      <Capture />
+    </AuthProvider>
+  );
+  await waitFor(() => expect(screen.getByTestId("status").props.children).toBe("locked"));
+
+  await act(async () => {
+    await auth!.register("test@example.com", "a strong master password");
+  });
+
+  expect(session.saveSession).not.toHaveBeenCalled();
+  expect(screen.getByTestId("status").props.children).toBe("unlocked");
+});
+
+test("setBiometricPreference(true) persists a session using the in-memory keys", async () => {
+  (session.loadSession as jest.Mock).mockResolvedValue(null);
+  (session.shouldPersistSession as jest.Mock).mockResolvedValue(false);
+  (authApi.register as jest.Mock).mockResolvedValue({ access_token: "tok", token_type: "bearer" });
+  (authApi.getMe as jest.Mock).mockResolvedValue({ id: 1, email: "test@example.com" });
+
+  let auth: ReturnType<typeof useAuth> | undefined;
+  function Capture() {
+    auth = useAuth();
+    return <Probe />;
+  }
+
+  await render(
+    <AuthProvider>
+      <Capture />
+    </AuthProvider>
+  );
+  await waitFor(() => expect(screen.getByTestId("status").props.children).toBe("locked"));
+  await act(async () => {
+    await auth!.register("test@example.com", "a strong master password");
+  });
+  expect(session.saveSession).not.toHaveBeenCalled();
+
+  await act(async () => {
+    await auth!.setBiometricPreference(true);
+  });
+
+  expect(session.saveSession).toHaveBeenCalledWith(
+    expect.objectContaining({ accessToken: "tok", email: "test@example.com" })
+  );
+});
+
+test("setBiometricPreference(false) clears any persisted session", async () => {
+  (session.loadSession as jest.Mock).mockResolvedValue(null);
+  (authApi.register as jest.Mock).mockResolvedValue({ access_token: "tok", token_type: "bearer" });
+  (authApi.getMe as jest.Mock).mockResolvedValue({ id: 1, email: "test@example.com" });
+
+  let auth: ReturnType<typeof useAuth> | undefined;
+  function Capture() {
+    auth = useAuth();
+    return <Probe />;
+  }
+
+  await render(
+    <AuthProvider>
+      <Capture />
+    </AuthProvider>
+  );
+  await waitFor(() => expect(screen.getByTestId("status").props.children).toBe("locked"));
+  await act(async () => {
+    await auth!.register("test@example.com", "a strong master password");
+  });
+
+  await act(async () => {
+    await auth!.setBiometricPreference(false);
+  });
+
+  expect(session.clearSession).toHaveBeenCalled();
 });
