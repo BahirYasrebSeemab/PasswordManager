@@ -30,3 +30,11 @@ export function login(email: string, authKey: Uint8Array): Promise<TokenResponse
 export function getMe(accessToken: string): Promise<UserResponse> {
   return apiRequest<UserResponse>("/auth/me", { accessToken });
 }
+
+export function deleteAccount(accessToken: string, authKey: Uint8Array): Promise<void> {
+  return apiRequest<void>("/auth/me", {
+    method: "DELETE",
+    accessToken,
+    body: { auth_key: bytesToBase64(authKey) },
+  });
+}
