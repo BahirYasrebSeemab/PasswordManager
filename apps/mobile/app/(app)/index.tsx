@@ -21,7 +21,12 @@ export default function VaultListScreen() {
     <View style={{ flex: 1, backgroundColor: colors.systemBackground, padding: spacing.lg, gap: spacing.md }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <ThemedText variant="largeTitle">Vault</ThemedText>
-        <Button title="Log out" variant="secondary" size="sm" onPress={logout} />
+        <View style={{ flexDirection: "row", gap: spacing.sm }}>
+          <Link href="/settings" asChild>
+            <Button title="Settings" variant="secondary" size="sm" />
+          </Link>
+          <Button title="Log out" variant="secondary" size="sm" onPress={logout} />
+        </View>
       </View>
       <FlatList
         data={entries}
