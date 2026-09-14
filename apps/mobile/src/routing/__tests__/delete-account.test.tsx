@@ -4,6 +4,17 @@ import * as SQLite from "expo-sqlite";
 import { useAuth } from "@/context/AuthContext";
 import { deleteAccount, ApiError } from "@/api/auth";
 
+// On a cold Jest cache (no persisted transform cache — e.g. a fresh CI
+// checkout, or after `jest --clearCache`), getDeleteAccountScreen()'s
+// deferred require() below pays the one-time cost of transforming this
+// screen's whole import tree (Button, ThemedText, theme, etc.) inside the
+// first test's body — against Jest's default 5000ms per-test budget. That
+// cold-transform cost alone can exceed 5s even though nothing in the test
+// itself is slow (deriveKeys is already mocked above; this isn't the real
+// PBKDF2 call slipping through). Give the file's tests headroom so the
+// first one isn't racing a cache that may not exist yet.
+jest.setTimeout(15000);
+
 jest.mock("@/context/AuthContext");
 // Partial mock, not a bare jest.mock("@/api/auth") — a bare auto-mock would
 // also replace ApiError with a no-op mock constructor, breaking both
