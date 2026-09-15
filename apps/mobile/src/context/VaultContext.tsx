@@ -26,6 +26,7 @@ interface VaultContextValue {
   deleteEntry: (id: string) => Promise<void>;
   getConflict: (id: string) => { mine: VaultEntryContent; theirs: VaultEntryContent } | null;
   resolveConflict: (id: string, keep: "mine" | "theirs") => Promise<void>;
+  deleteLocalVault: () => Promise<void>;
 }
 
 const VaultContext = createContext<VaultContextValue | undefined>(undefined);
@@ -163,6 +164,24 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     [db, vaultKey, rawEntries, reload, refresh]
   );
 
+  // Closes the native SQLite handle before deleting the file — expo-sqlite's
+  // native layer refuses to delete a database it still has open (both
+  // Android's and iOS's native modules track open databases by path and
+  // throw if asked to delete one that's still registered). `db`'s runtime
+  // value IS a real expo-sqlite SQLiteDatabase instance in production (the
+  // SQLiteDatabaseLike interface just doesn't declare closeAsync since the
+  // node:sqlite-backed test double doesn't need it), so this optional-chained
+  // cast is safe.
+  const deleteLocalVault = useCallback(async () => {
+    if (!user) return;
+    const closable = db as (SQLiteDatabaseLike & { closeAsync?: () => Promise<void> }) | null;
+    if (closable?.closeAsync) {
+      await closable.closeAsync();
+    }
+    await SQLite.deleteDatabaseAsync(`vault-${user.id}.db`);
+    setDb(null);
+  }, [db, user]);
+
   const entries: DecryptedEntry[] = vaultKey
     ? rawEntries.flatMap((entry) => {
         try {
@@ -181,7 +200,17 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
   return (
     <VaultContext.Provider
-      value={{ entries, isSyncing, refresh, createEntry, updateEntry, deleteEntry, getConflict, resolveConflict }}
+      value={{
+        entries,
+        isSyncing,
+        refresh,
+        createEntry,
+        updateEntry,
+        deleteEntry,
+        getConflict,
+        resolveConflict,
+        deleteLocalVault,
+      }}
     >
       {children}
     </VaultContext.Provider>

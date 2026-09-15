@@ -8,11 +8,15 @@ export interface CsvRow {
 }
 
 export function csvRowToEntry(row: CsvRow): VaultEntryContent {
+  const name = unescapeCsvCell(row.name);
+  const url = unescapeCsvCell(row.url);
+  const username = unescapeCsvCell(row.username);
+  const password = unescapeCsvCell(row.password);
   return {
-    title: row.name || row.url,
-    username: row.username || undefined,
-    password: row.password,
-    url: row.url || undefined,
+    title: name || url,
+    username: username || undefined,
+    password,
+    url: url || undefined,
   };
 }
 
@@ -31,6 +35,15 @@ export function entryToCsvRow(content: VaultEntryContent): CsvRow {
 // apps treat a leading apostrophe as "force text", not part of the value.
 export function escapeCsvCell(value: string): string {
   return /^[=+\-@]/.test(value) ? `'${value}` : value;
+}
+
+// Reverses escapeCsvCell's leading-apostrophe defense on import. Only strips
+// the apostrophe when it's immediately followed by one of the four
+// formula-trigger characters — an ordinary value that happens to start with
+// an apostrophe for some other reason (e.g. "'tis a password") is left
+// untouched.
+export function unescapeCsvCell(value: string): string {
+  return /^'[=+\-@]/.test(value) ? value.slice(1) : value;
 }
 
 const CSV_COLUMNS = ["name", "url", "username", "password"] as const;
@@ -77,9 +90,27 @@ function parseCsvLine(line: string): string[] {
 }
 
 export function csvToRows(csv: string): CsvRow[] {
-  const lines = csv.split(/\r\n|\n/).filter((line) => line.length > 0);
-  if (lines.length === 0) return [];
-  const [headerLine, ...dataLines] = lines;
+  // Records are split on physical lines only after confirming we're not
+  // inside a quoted field — a real Chrome/Firefox CSV export can have a
+  // quoted, multi-line `note` column, and splitting blindly on \n would
+  // shatter that single logical record into several, misaligning fields.
+  const physicalLines = csv.split(/\r\n|\n/);
+  const records: string[] = [];
+  let buffer = "";
+  for (const line of physicalLines) {
+    buffer = buffer.length > 0 ? `${buffer}\n${line}` : line;
+    const quoteCount = (buffer.match(/"/g) ?? []).length;
+    if (quoteCount % 2 === 0) {
+      records.push(buffer);
+      buffer = "";
+    }
+    // odd quote count: still inside a quoted multi-line field, keep accumulating
+  }
+  if (buffer.length > 0) records.push(buffer);
+
+  const nonEmptyRecords = records.filter((record) => record.length > 0);
+  if (nonEmptyRecords.length === 0) return [];
+  const [headerLine, ...dataLines] = nonEmptyRecords;
   const headers = parseCsvLine(headerLine).map((h) => h.trim().toLowerCase());
   return dataLines.map((line) => {
     const values = parseCsvLine(line);

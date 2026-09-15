@@ -496,6 +496,19 @@ test("setBiometricPreference(true) persists a session using the in-memory keys",
   );
 });
 
+test("unlockWithStoredSession() routes to 'locked' without reading storage when shouldPersistSession() resolves false", async () => {
+  (session.shouldPersistSession as jest.Mock).mockResolvedValue(false);
+
+  await render(
+    <AuthProvider>
+      <Probe />
+    </AuthProvider>
+  );
+
+  await waitFor(() => expect(screen.getByTestId("status").props.children).toBe("locked"));
+  expect(session.loadSession).not.toHaveBeenCalled();
+});
+
 test("setBiometricPreference(false) clears any persisted session", async () => {
   (session.loadSession as jest.Mock).mockResolvedValue(null);
   (authApi.register as jest.Mock).mockResolvedValue({ access_token: "tok", token_type: "bearer" });

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, act } from "@testing-library/react-native";
 import { Alert } from "react-native";
-import * as SQLite from "expo-sqlite";
 import { useAuth } from "@/context/AuthContext";
+import { useVault } from "@/context/VaultContext";
 import { deleteAccount, ApiError } from "@/api/auth";
 
 // On a cold Jest cache (no persisted transform cache — e.g. a fresh CI
@@ -16,6 +16,7 @@ import { deleteAccount, ApiError } from "@/api/auth";
 jest.setTimeout(15000);
 
 jest.mock("@/context/AuthContext");
+jest.mock("@/context/VaultContext");
 // Partial mock, not a bare jest.mock("@/api/auth") — a bare auto-mock would
 // also replace ApiError with a no-op mock constructor, breaking both
 // `new ApiError(...)` below and the `err instanceof ApiError` check inside
@@ -25,7 +26,6 @@ jest.mock("@/api/auth", () => ({
   ...jest.requireActual("@/api/auth"),
   deleteAccount: jest.fn(),
 }));
-jest.mock("expo-sqlite");
 // deriveKeys() runs a real 600,000-iteration PBKDF2 (~30s in this JS test
 // environment, no native acceleration), which blows past Jest's default 5s
 // timeout. AuthContext.test.tsx hits and documents this exact problem and
@@ -79,9 +79,10 @@ afterEach(() => {
 // combination does not affect the assertions' meaning, only their timing.
 test("correct password deletes the account, wipes the local db, and logs out", async () => {
   const logout = jest.fn().mockResolvedValue(undefined);
+  const deleteLocalVault = jest.fn().mockResolvedValue(undefined);
   (useAuth as jest.Mock).mockReturnValue({ user: USER, accessToken: "tok", logout });
+  (useVault as jest.Mock).mockReturnValue({ deleteLocalVault });
   (deleteAccount as jest.Mock).mockResolvedValue(undefined);
-  (SQLite.deleteDatabaseAsync as jest.Mock).mockResolvedValue(undefined);
   const DeleteAccountScreen = getDeleteAccountScreen();
 
   await render(<DeleteAccountScreen />);
@@ -92,13 +93,15 @@ test("correct password deletes the account, wipes the local db, and logs out", a
   });
 
   expect(deleteAccount).toHaveBeenCalledWith("tok", expect.any(Uint8Array));
-  expect(SQLite.deleteDatabaseAsync).toHaveBeenCalledWith("vault-1.db");
+  expect(deleteLocalVault).toHaveBeenCalled();
   expect(logout).toHaveBeenCalled();
 });
 
 test("wrong password shows an error and does not touch local data", async () => {
   const logout = jest.fn();
+  const deleteLocalVault = jest.fn();
   (useAuth as jest.Mock).mockReturnValue({ user: USER, accessToken: "tok", logout });
+  (useVault as jest.Mock).mockReturnValue({ deleteLocalVault });
   (deleteAccount as jest.Mock).mockRejectedValue(new ApiError(401, "Incorrect password"));
   const DeleteAccountScreen = getDeleteAccountScreen();
 
@@ -110,6 +113,25 @@ test("wrong password shows an error and does not touch local data", async () => 
   });
 
   expect(screen.getByText("Incorrect password.")).toBeTruthy();
-  expect(SQLite.deleteDatabaseAsync).not.toHaveBeenCalled();
+  expect(deleteLocalVault).not.toHaveBeenCalled();
   expect(logout).not.toHaveBeenCalled();
+});
+
+test("local cleanup failure does not prevent logout — server deletion already succeeded", async () => {
+  const logout = jest.fn().mockResolvedValue(undefined);
+  const deleteLocalVault = jest.fn().mockRejectedValue(new Error("close failed"));
+  (useAuth as jest.Mock).mockReturnValue({ user: USER, accessToken: "tok", logout });
+  (useVault as jest.Mock).mockReturnValue({ deleteLocalVault });
+  (deleteAccount as jest.Mock).mockResolvedValue(undefined);
+  const DeleteAccountScreen = getDeleteAccountScreen();
+
+  await render(<DeleteAccountScreen />);
+  await act(async () => {
+    fireEvent.changeText(screen.getByTestId("input-password"), "correct horse battery staple");
+    fireEvent.press(screen.getByText("Delete my account"));
+    await pendingOnPress;
+  });
+
+  expect(deleteLocalVault).toHaveBeenCalled();
+  expect(logout).toHaveBeenCalled();
 });

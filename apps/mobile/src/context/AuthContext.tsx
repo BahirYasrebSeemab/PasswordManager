@@ -43,6 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // leave `status` stuck at "loading" forever instead of routing to
     // "locked".
     try {
+      if (!(await shouldPersistSession())) {
+        setStatus("locked");
+        return;
+      }
       const stored = await loadSession();
       if (!stored) {
         setStatus("locked");

@@ -124,3 +124,30 @@ test("getConflict returns decrypted mine/theirs, resolveConflict('mine') clears 
   expect(resolved?.syncStatus).toBe("pending");
   expect(resolved?.content).toEqual({ title: "Mine", password: "a" });
 });
+
+test("deleteLocalVault closes the db handle before deleting the file, then clears db state", async () => {
+  const closeAsync = jest.fn().mockResolvedValue(undefined);
+  const db = { ...createTestDatabase(), closeAsync };
+  (SQLite.openDatabaseAsync as jest.Mock).mockImplementation(async () => db);
+  (SQLite.deleteDatabaseAsync as jest.Mock) = jest.fn().mockResolvedValue(undefined);
+
+  let vault: ReturnType<typeof useVault> | undefined;
+  function Capture() {
+    vault = useVault();
+    return <Probe />;
+  }
+
+  await render(
+    <VaultProvider>
+      <Capture />
+    </VaultProvider>
+  );
+  await waitFor(() => expect(vault).toBeDefined());
+
+  await act(async () => {
+    await vault!.deleteLocalVault();
+  });
+
+  expect(closeAsync).toHaveBeenCalled();
+  expect(SQLite.deleteDatabaseAsync).toHaveBeenCalledWith("vault-1.db");
+});

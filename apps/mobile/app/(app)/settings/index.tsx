@@ -19,6 +19,7 @@ export default function SettingsScreen() {
   const { setBiometricPreference } = useAuth();
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricEnabled, setBiometricEnabledState] = useState(true);
+  const [biometricToggleLoading, setBiometricToggleLoading] = useState(false);
   const [autoLockSeconds, setAutoLockSecondsState] = useState(30);
 
   useEffect(() => {
@@ -31,8 +32,15 @@ export default function SettingsScreen() {
 
   async function handleBiometricToggle() {
     const next = !biometricEnabled;
+    setBiometricToggleLoading(true);
     setBiometricEnabledState(next);
-    await setBiometricPreference(next);
+    try {
+      await setBiometricPreference(next);
+    } catch {
+      setBiometricEnabledState(!next);
+    } finally {
+      setBiometricToggleLoading(false);
+    }
   }
 
   async function handleAutoLockChange(seconds: number) {
@@ -50,6 +58,7 @@ export default function SettingsScreen() {
           <Button
             title={biometricEnabled ? "Enabled — tap to disable" : "Disabled — tap to enable"}
             variant="secondary"
+            disabled={biometricToggleLoading}
             onPress={handleBiometricToggle}
           />
         ) : (

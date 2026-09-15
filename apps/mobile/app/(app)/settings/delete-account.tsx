@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert, TextInput, View } from "react-native";
-import * as SQLite from "expo-sqlite";
 import { useAuth } from "@/context/AuthContext";
+import { useVault } from "@/context/VaultContext";
 import { deriveKeys } from "@/crypto/deriveKeys";
 import { deleteAccount, ApiError } from "@/api/auth";
 import { Button } from "@/components/button";
@@ -10,6 +10,7 @@ import { colors, spacing } from "@/theme";
 
 export default function DeleteAccountScreen() {
   const { user, accessToken, logout } = useAuth();
+  const { deleteLocalVault } = useVault();
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,24 +30,36 @@ export default function DeleteAccountScreen() {
     if (!user || !accessToken) return;
     setError(null);
     setLoading(true);
+
     try {
+      // Yield before the synchronous, multi-second PBKDF2 derivation so the
+      // loading spinner actually paints first — same reasoning as
+      // AuthContext's register()/login().
+      await new Promise(requestAnimationFrame);
       const { authKey } = deriveKeys(user.email, password);
       await deleteAccount(accessToken, authKey);
-      // Deleting the local per-user cache is done here, after the server
-      // confirms deletion, so a wrong-password attempt never touches local
-      // data. logout() clears the rest (SecureStore session, in-memory
-      // state) and routes back to the login screen via the existing
-      // status==="locked" redirect in app/(app)/_layout.tsx.
-      await SQLite.deleteDatabaseAsync(`vault-${user.id}.db`);
-      await logout();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError("Incorrect password.");
+      } else if (err instanceof ApiError && err.status === 429) {
+        setError("Too many attempts. Wait a minute and try again.");
       } else {
         setError("Couldn't delete your account. Check your connection and try again.");
       }
       setLoading(false);
+      return;
     }
+
+    // Server-side deletion has already succeeded at this point — the
+    // account is gone regardless of what happens next. Local cleanup must
+    // never strand the session: fall through to logout() even if it fails.
+    try {
+      await deleteLocalVault();
+    } catch {
+      // best-effort local cleanup — the server-side deletion already
+      // succeeded, so don't block logout() on this
+    }
+    await logout();
   }
 
   return (

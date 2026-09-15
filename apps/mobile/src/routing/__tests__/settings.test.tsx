@@ -60,3 +60,15 @@ test("tapping the biometric toggle calls setBiometricPreference with the flipped
 
   await waitFor(() => expect(setBiometricPreference).toHaveBeenCalledWith(false));
 });
+
+test("biometric toggle rolls back to its previous state if setBiometricPreference fails", async () => {
+  const setBiometricPreference = jest.fn().mockRejectedValue(new Error("fail"));
+  (useAuth as jest.Mock).mockReturnValue({ setBiometricPreference });
+  const SettingsScreen = getSettingsScreen();
+
+  await render(<SettingsScreen />);
+  await waitFor(() => expect(screen.getByText("Enabled — tap to disable")).toBeTruthy());
+  fireEvent.press(screen.getByText("Enabled — tap to disable"));
+
+  await waitFor(() => expect(screen.getByText("Enabled — tap to disable")).toBeTruthy());
+});
