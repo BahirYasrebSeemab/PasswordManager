@@ -1382,16 +1382,14 @@ git commit -m "add Chrome/Firefox-compatible CSV format module"
 - Consumes: `entryToCsvRow`, `rowsToCsv` (Task 6), `useVault().entries` (Plan 2, unchanged).
 - Produces: `exportVaultToCsv(entries: VaultEntryContent[]): Promise<void>`.
 
-**Package note:** this task needs `expo-sharing` and `expo-file-system`, not yet installed. Tell the user to run, from `apps/mobile`:
-```
-bun x expo install expo-sharing expo-file-system
-```
-before starting this task.
+**Package note:** this task needs `expo-sharing` and `expo-file-system`, now installed (`expo-file-system@~57.0.7`, `expo-sharing@~57.0.19`).
+
+**Import path note (verified against the installed version, not assumed):** `expo-file-system@57` rewrote its default export to a new `File`/`Directory` class-based API — the old function-based API this task's code uses (`cacheDirectory`, `writeAsStringAsync`, `deleteAsync`, `EncodingType`) is NOT on the default `"expo-file-system"` entry point anymore. It's still fully available, unchanged, via the `"expo-file-system/legacy"` subpath (confirmed present in `node_modules/expo-file-system/build/legacy/`) — every `import * as FileSystem from "expo-file-system"` below must be `import * as FileSystem from "expo-file-system/legacy"` instead. This is the only change from what an older Expo SDK's docs would show.
 
 - [ ] **Step 1: Write `src/import-export/exportVault.ts`**
 
 ```ts
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { entryToCsvRow, rowsToCsv } from "./csvFormat";
 import type { VaultEntryContent } from "@/context/vaultEntry";
@@ -1415,7 +1413,7 @@ export async function exportVaultToCsv(entries: VaultEntryContent[]): Promise<vo
 - [ ] **Step 2: Write the failing test `src/import-export/exportVault.test.ts`**
 
 ```ts
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { exportVaultToCsv } from "./exportVault";
 
@@ -1589,6 +1587,8 @@ bun x expo install expo-document-picker
 ```
 before starting this task. **Also note:** `expo-document-picker`'s `getDocumentAsync()` result shape (`{ canceled: boolean; assets: { uri: string; ... }[] | null }`) is written from current knowledge of the package's API — once it's installed, check `node_modules/expo-document-picker`'s type definitions (`DocumentPickerResult` in `build/DocumentPicker.types.d.ts` or similar) and adjust the screen code below if the actual shape differs.
 
+**Import path note (same correction as Task 7):** this task also uses `expo-file-system` — import it as `"expo-file-system/legacy"`, not `"expo-file-system"` (the installed `expo-file-system@57`'s default export is a new class-based API; the old `readAsStringAsync`-style function used below only exists on the `/legacy` subpath). The code below already reflects this.
+
 - [ ] **Step 1: Write `src/import-export/importVault.ts`**
 
 ```ts
@@ -1664,7 +1664,7 @@ Expected: PASS (3 passed)
 import { useState } from "react";
 import { View } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { useVault } from "@/context/VaultContext";
 import { parseImportCsv, importEntries } from "@/import-export/importVault";
 import { Button } from "@/components/button";
@@ -1719,7 +1719,7 @@ export default function ImportScreen() {
 ```tsx
 import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { useVault } from "@/context/VaultContext";
 import { parseImportCsv, importEntries } from "@/import-export/importVault";
 
