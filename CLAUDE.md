@@ -20,16 +20,12 @@ Each `apps/*` folder is independent — a change in one should never require tou
 another unless explicitly working on a cross-cutting feature (e.g. an API contract
 change that all clients depend on). Keep this boundary strict.
 
-## Browser extension — phased scope, don't build ahead of the current phase
+## Browser extension — Phase 2 authorized
 
-**Phase 1 (current):** the extension does NOT replace Chrome's/Zen's own password
-manager. It detects when the browser saves/autofills a credential and mirrors it into
-my vault via the API. Do not build autofill, save-prompt UI, or anything that competes
-with the browser's native password manager unless I explicitly say we're starting
-Phase 2. If a task seems to call for Phase 2 behavior, stop and ask me first.
-
-**Phase 2 (future, not yet):** full replacement — the extension takes over saving and
-autofilling itself. Do not scaffold this early "for convenience."
+The extension builds its own password-field detection, autofill, and save-prompt UI (the
+former "Phase 2"). Explicitly authorized on 2026-09-19; design:
+`docs/superpowers/specs/2026-09-19-browser-extension-design.md`. Order: Zen/Firefox first,
+then Chrome. Every other rule in this file (modularity, zero-knowledge, explanations) still applies.
 
 ## Architecture rules — non-negotiable
 

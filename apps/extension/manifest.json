@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Password Manager",
+  "version": "0.1.0",
+  "description": "Zero-knowledge password manager: autofill and save prompts.",
+  "browser_specific_settings": {
+    "gecko": { "id": "password-manager@yasreb.local", "strict_min_version": "115.0" }
+  },
+  "action": { "default_title": "Password Manager", "default_popup": "popup.html" },
+  "options_ui": { "page": "options.html", "open_in_tab": true },
+  "background": { "scripts": ["background.js"] },
+  "permissions": ["storage", "alarms", "clipboardWrite"],
+  "content_scripts": [
+    {
+      "matches": ["https://*/*", "http://localhost/*"],
+      "js": ["content.js"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ]
+}
