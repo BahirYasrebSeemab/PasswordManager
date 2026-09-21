@@ -6,13 +6,13 @@ import {
   listVaultEntries,
   updateVaultEntry,
 } from "../api/vault";
+import { createActiveSessionReader } from "./activeSession";
 import { performLogin } from "./auth";
 import { createPendingStore } from "./pendingSave";
 import { handleMessage, type RouterDeps } from "./router";
 import {
   clearSession,
   expireIfIdle,
-  getActiveSession,
   saveSession,
   type KeyValueStore,
 } from "./session";
@@ -36,9 +36,14 @@ async function lock(): Promise<void> {
   await pending.clearAll();
 }
 
-async function activeSession() {
-  return getActiveSession(sessionStore, now(), await getAutoLockMinutes(localStore));
-}
+// Every "is the vault unlocked?" read goes through this, so an idle expiry
+// discovered on use also wipes any parked plaintext pending saves.
+const activeSession = createActiveSessionReader({
+  store: sessionStore,
+  pending,
+  now,
+  getAutoLockMinutes: () => getAutoLockMinutes(localStore),
+});
 
 const vault = createVaultService({
   getSession: activeSession,
