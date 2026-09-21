@@ -15,6 +15,7 @@ import {
   decideSave,
   entryMatchesPage,
   hostnameOf,
+  isEligiblePageUrl,
   originOf,
   type DecryptedEntry,
   type SaveDecision,
@@ -171,6 +172,8 @@ export function createVaultService(deps: VaultServiceDeps) {
       username: string,
       password: string
     ): Promise<Result<{ decision: SaveDecision }>> {
+      // Eligibility is enforced here in the background, not trusted from the content script.
+      if (!isEligiblePageUrl(pageUrl)) return { ok: false, error: "forbidden" };
       if (!validateEntryContent(candidateContent(pageUrl, username, password)).ok) {
         return { ok: false, error: "invalid_input" };
       }
@@ -180,6 +183,7 @@ export function createVaultService(deps: VaultServiceDeps) {
     },
 
     async saveNew(pageUrl: string, username: string, password: string): Promise<Result> {
+      if (!isEligiblePageUrl(pageUrl)) return { ok: false, error: "forbidden" };
       const content = candidateContent(pageUrl, username, password);
       if (!validateEntryContent(content).ok) return { ok: false, error: "invalid_input" };
       const result = await run((s) => deps.api.create(s.accessToken, seal(s, content)));

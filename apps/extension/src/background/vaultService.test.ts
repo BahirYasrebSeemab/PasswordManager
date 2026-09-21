@@ -160,3 +160,25 @@ test("saveUpdate changes only the password and preserves title, url, and notes",
     notes: "keep me",
   });
 });
+
+test("evaluateSubmission refuses ineligible pages as forbidden without calling the API", async () => {
+  const { service, api } = setup();
+  expect(await service.evaluateSubmission("http://example.com/login", "a", "pw")).toEqual({ ok: false, error: "forbidden" });
+  expect(await service.evaluateSubmission("about:blank", "a", "pw")).toEqual({ ok: false, error: "forbidden" });
+  expect(api.list).not.toHaveBeenCalled();
+});
+
+test("saveNew refuses ineligible pages as forbidden without calling the API", async () => {
+  const { service, api } = setup();
+  expect(await service.saveNew("http://example.com/", "me", "pw")).toEqual({ ok: false, error: "forbidden" });
+  expect(await service.saveNew("about:blank", "me", "pw")).toEqual({ ok: false, error: "forbidden" });
+  expect(api.create).not.toHaveBeenCalled();
+});
+
+test("http://localhost is still an eligible page for evaluateSubmission", async () => {
+  const { service } = setup();
+  expect(await service.evaluateSubmission("http://localhost:3000/login", "me", "pw")).toEqual({
+    ok: true,
+    decision: { kind: "save" },
+  });
+});

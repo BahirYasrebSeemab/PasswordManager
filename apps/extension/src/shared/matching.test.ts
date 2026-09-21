@@ -51,4 +51,14 @@ describe("decideSave", () => {
   test("ignores entries saved for other sites", () => {
     expect(decideSave(entries, "https://other.com/", "me", "x")).toEqual({ kind: "none" });
   });
+
+  test("with duplicate same-site same-username entries, any identical password means none", () => {
+    const dupes = [
+      { id: 1, content: { title: "A", username: "me", password: "old1", url: "https://example.com" } },
+      { id: 3, content: { title: "B", username: "me", password: "old2", url: "https://example.com" } },
+    ];
+    expect(decideSave(dupes, page, "me", "old2")).toEqual({ kind: "none" });
+    expect(decideSave(dupes, page, "me", "old1")).toEqual({ kind: "none" });
+    expect(decideSave(dupes, page, "me", "new")).toEqual({ kind: "update", id: 1 });
+  });
 });

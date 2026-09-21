@@ -53,13 +53,14 @@ export function decideSave(
   username: string,
   password: string
 ): SaveDecision {
-  const sameSiteAndUser = entries.find(
+  const sameSiteAndUser = entries.filter(
     (entry) =>
       entryMatchesPage(entry.content.url, pageUrl) &&
       (entry.content.username ?? "").trim() === username.trim()
   );
-  if (!sameSiteAndUser) return { kind: "save" };
-  return sameSiteAndUser.content.password === password
-    ? { kind: "none" }
-    : { kind: "update", id: sameSiteAndUser.id };
+  if (sameSiteAndUser.length === 0) return { kind: "save" };
+  // Duplicates are realistic (mobile and extension can both save): if any of them
+  // already holds this password, there is nothing to do.
+  if (sameSiteAndUser.some((entry) => entry.content.password === password)) return { kind: "none" };
+  return { kind: "update", id: sameSiteAndUser[0].id };
 }
