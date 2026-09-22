@@ -17,7 +17,7 @@ If the backend or its database were fully compromised, an attacker would get enc
 apps/
   api/         FastAPI backend — source of truth for accounts and encrypted vault entries
   mobile/      Expo/React Native app — iOS, Android, and web from one codebase
-  extension/   Chrome + Zen/Firefox browser extension (not yet started)
+  extension/   Zen/Firefox browser extension (Manifest V3): login, vault, autofill, save prompt
   cli/         Typer-based CLI client (not yet started)
 infra/
   terraform/   AWS infrastructure as code (not yet started)
@@ -93,9 +93,11 @@ apps/mobile/src/
 apps/mobile/app/   Expo Router screens
 ```
 
-### `apps/extension` — Browser extension (not started)
+### `apps/extension` — Browser extension
 
-Planned: Zen/Firefox first, then Chrome. Will implement its own password-field detection and save-prompt UI (not just mirroring the browser's native password manager), reusing the same crypto scheme and API as the mobile app.
+Implemented for Zen/Firefox: login, vault browsing/editing, click-to-fill autofill, a
+save/update prompt, and idle auto-lock. Reuses the mobile app's crypto scheme and the same
+API. Chrome build planned. See `apps/extension/README.md`.
 
 ### `apps/cli` — CLI (not started)
 
@@ -111,7 +113,7 @@ AWS deployment, to be added when the app is ready to go live.
 |---|---|
 | `apps/api` | Auth + vault CRUD complete, rate-limited, tested |
 | `apps/mobile` | Auth/unlock, vault CRUD, offline sync + conflict resolution, settings, account deletion, import/export — complete |
-| `apps/extension` | Not started |
+| `apps/extension` | Zen/Firefox build complete (login, vault, autofill, save prompt); Chrome not started |
 | `apps/cli` | Not started |
 | `infra/terraform` | Not started |
 
