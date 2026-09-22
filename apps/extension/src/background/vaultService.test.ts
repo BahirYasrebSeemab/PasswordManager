@@ -104,6 +104,38 @@ test("updateEntry validates first, then encrypts and sends", async () => {
   expect(JSON.parse(decryptEntry(vaultKey, ciphertext))).toEqual({ title: "New", password: "np" });
 });
 
+test("updateEntry keeps unknown fields stored by other clients but does not resurrect cleared known fields", async () => {
+  const withExtra = row(1, {
+    title: "alpha",
+    username: "a",
+    password: "ap",
+    url: "https://example.com",
+    customField: "keep-me",
+  } as VaultEntryContent);
+  const { service, api } = setup({ get: vi.fn().mockResolvedValue(withExtra) });
+  expect(await service.updateEntry(1, { title: "New", password: "np" })).toEqual({ ok: true });
+  expect(api.get).toHaveBeenCalledWith("tok1", "1");
+  const [, , ciphertext] = api.update.mock.calls[0];
+  expect(JSON.parse(decryptEntry(vaultKey, ciphertext))).toEqual({
+    customField: "keep-me",
+    title: "New",
+    password: "np",
+  });
+});
+
+test("updateEntry returns not_found and does not update when the existing row is missing", async () => {
+  const { service, api } = setup({ get: vi.fn().mockRejectedValue(new ApiError(404, "nope")) });
+  expect(await service.updateEntry(1, { title: "New", password: "np" })).toEqual({ ok: false, error: "not_found" });
+  expect(api.update).not.toHaveBeenCalled();
+});
+
+test("updateEntry returns not_found and does not update when the existing row cannot be decrypted", async () => {
+  const bad = { id: 1, ciphertext: "AAAA", created_at: "", updated_at: "" };
+  const { service, api } = setup({ get: vi.fn().mockResolvedValue(bad) });
+  expect(await service.updateEntry(1, { title: "New", password: "np" })).toEqual({ ok: false, error: "not_found" });
+  expect(api.update).not.toHaveBeenCalled();
+});
+
 test("deleteEntry calls the API with the string id", async () => {
   const { service, api } = setup();
   expect(await service.deleteEntry(2)).toEqual({ ok: true });

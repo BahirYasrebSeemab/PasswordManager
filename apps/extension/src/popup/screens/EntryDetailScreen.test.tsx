@@ -6,7 +6,7 @@ import { copyToClipboard } from "../clipboard";
 import { EntryDetailScreen } from "./EntryDetailScreen";
 
 vi.mock("../../messaging/client", () => ({ sendMessage: vi.fn() }));
-vi.mock("../clipboard", () => ({ copyToClipboard: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("../clipboard", () => ({ copyToClipboard: vi.fn().mockResolvedValue({ clearScheduled: true }) }));
 
 const send = vi.mocked(sendMessage) as unknown as ReturnType<typeof vi.fn>;
 
@@ -52,6 +52,27 @@ test("copying the password uses the clipboard helper", async () => {
   await screen.findByText("Example");
   await userEvent.click(screen.getByRole("button", { name: "Copy password" }));
   expect(copyToClipboard).toHaveBeenCalledWith("hunter2");
+  expect(await screen.findByText("Password copied. It will be cleared in 30 seconds.")).toBeTruthy();
+});
+
+test("warns to clear the clipboard manually when the automatic clear could not be scheduled", async () => {
+  respond();
+  vi.mocked(copyToClipboard).mockResolvedValueOnce({ clearScheduled: false });
+  setup();
+  await screen.findByText("Example");
+  await userEvent.click(screen.getByRole("button", { name: "Copy password" }));
+  expect(
+    await screen.findByText("Password copied, but automatic clearing failed. Clear your clipboard manually.")
+  ).toBeTruthy();
+});
+
+test("says the copy failed when the clipboard write itself fails", async () => {
+  respond();
+  vi.mocked(copyToClipboard).mockRejectedValueOnce(new Error("denied"));
+  setup();
+  await screen.findByText("Example");
+  await userEvent.click(screen.getByRole("button", { name: "Copy password" }));
+  expect(await screen.findByText("Couldn't copy to the clipboard.")).toBeTruthy();
 });
 
 test("an https url renders as a safe link; a javascript: url is plain text, never a link", async () => {

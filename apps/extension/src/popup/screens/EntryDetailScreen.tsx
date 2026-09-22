@@ -73,8 +73,12 @@ export function EntryDetailScreen({ id, onBack, onLocked }: Props) {
 
   async function copy(value: string, label: string) {
     try {
-      await copyToClipboard(value);
-      setMessage(`${label} copied. It will be cleared in 30 seconds.`);
+      const { clearScheduled } = await copyToClipboard(value);
+      setMessage(
+        clearScheduled
+          ? `${label} copied. It will be cleared in 30 seconds.`
+          : `${label} copied, but automatic clearing failed. Clear your clipboard manually.`
+      );
     } catch {
       setMessage("Couldn't copy to the clipboard.");
     }

@@ -67,6 +67,10 @@ function summarize({ id, content }: DecryptedEntry): EntrySummary {
   return summary;
 }
 
+// The five fields the extension edits. Any other key in a stored entry was written
+// by another client (mobile, CLI) and must survive an edit made here.
+const KNOWN_KEYS = new Set(["title", "username", "password", "url", "notes"]);
+
 const seal = (session: Session, content: VaultEntryContent) =>
   encryptEntry(session.vaultKey, JSON.stringify(content));
 
@@ -133,8 +137,19 @@ export function createVaultService(deps: VaultServiceDeps) {
 
     async updateEntry(id: number, content: VaultEntryContent): Promise<Result> {
       if (!validateEntryContent(content).ok) return { ok: false, error: "invalid_input" };
-      const result = await run((s) => deps.api.update(s.accessToken, String(id), seal(s, content)));
-      return result.ok ? { ok: true } : result;
+      const result = await run(async (s) => {
+        const existing = decryptRow(s, await deps.api.get(s.accessToken, String(id)));
+        if (!existing) return "not_found" as const;
+        const preserved = Object.fromEntries(
+          Object.entries(existing.content).filter(([key]) => !KNOWN_KEYS.has(key))
+        );
+        // Known fields come exactly from `content` (a cleared field stays absent);
+        // unknown keys from the stored row are carried over untouched.
+        await deps.api.update(s.accessToken, String(id), seal(s, { ...preserved, ...content }));
+        return "done" as const;
+      });
+      if (!result.ok) return result;
+      return result.value === "not_found" ? { ok: false, error: "not_found" } : { ok: true };
     },
 
     async deleteEntry(id: number): Promise<Result> {
