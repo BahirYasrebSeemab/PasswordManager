@@ -14,14 +14,29 @@ export function OptionsApp() {
   }, []);
 
   async function change(value: number) {
+    const previous = minutes;
     setMinutes(value);
-    const result = await sendMessage({ type: "setAutoLockMinutes", minutes: value });
-    setMessage(result.ok ? "Saved." : errorText(result.error));
+    try {
+      const result = await sendMessage({ type: "setAutoLockMinutes", minutes: value });
+      if (result.ok) {
+        setMessage("Saved.");
+      } else {
+        setMinutes(previous);
+        setMessage(errorText(result.error));
+      }
+    } catch {
+      setMinutes(previous);
+      setMessage(errorText("network"));
+    }
   }
 
   async function logout() {
-    await sendMessage({ type: "logout" });
-    setMessage("Logged out.");
+    try {
+      await sendMessage({ type: "logout" });
+      setMessage("Logged out.");
+    } catch {
+      setMessage(errorText("network"));
+    }
   }
 
   return (
