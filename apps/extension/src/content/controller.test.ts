@@ -155,3 +155,39 @@ test("pending saves are not checked on start when disabled (e.g. inside an ifram
   await new Promise((r) => setTimeout(r, 30));
   expect(send).not.toHaveBeenCalledWith({ type: "getPendingSave" });
 });
+
+test("the post-submit poll is also skipped when checkPendingOnStart is false, e.g. inside an iframe", async () => {
+  const send = backend({ credentialSubmitted: { ok: true } });
+  start(send, { checkPendingOnStart: false });
+  (document.getElementById("u") as HTMLInputElement).value = "me";
+  (document.getElementById("p") as HTMLInputElement).value = "pw";
+  document.getElementById("f")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  expect(send).toHaveBeenCalledWith({ type: "credentialSubmitted", username: "me", password: "pw" });
+  // pendingCheckDelayMs is 10ms in `start`; wait well past it.
+  await new Promise((r) => setTimeout(r, 50));
+  expect(send).not.toHaveBeenCalledWith({ type: "getPendingSave" });
+});
+
+test("a login field's icon and cleanup entry are removed once the field leaves the DOM, so re-mounted forms don't accumulate icons", async () => {
+  const send = backend();
+  overlay = createOverlay({ mode: "open", requireTrusted: false });
+  const originalAddIcon = overlay.addIcon.bind(overlay);
+  const removeSpy = vi.fn();
+  overlay.addIcon = (anchor, onActivate) => {
+    const remove = originalAddIcon(anchor, onActivate);
+    return () => {
+      removeSpy();
+      remove();
+    };
+  };
+  const stop = startController({ send: send as never, overlay, pendingCheckDelayMs: 10 });
+  stops.push(stop);
+
+  expect(overlay.host.shadowRoot!.querySelectorAll("button.icon").length).toBe(1);
+
+  document.getElementById("f")!.remove();
+  document.body.insertAdjacentHTML("beforeend", `<form id="f2"><input type="text"><input type="password"></form>`);
+
+  await vi.waitFor(() => expect(removeSpy).toHaveBeenCalledTimes(1));
+  expect(overlay.host.shadowRoot!.querySelectorAll("button.icon").length).toBe(1);
+});
