@@ -4,13 +4,17 @@ export interface LoginFields {
 }
 
 const TEXT_TYPES = new Set(["text", "email", "tel"]);
-const MAX_ANCESTOR_HOPS = 4;
+// Only the password field's immediate parent is searched when there's no <form> —
+// climbing further risks pairing with an unrelated input from another section of
+// the page that merely shares a distant ancestor (e.g. a header search box).
+const MAX_ANCESTOR_HOPS = 1;
 const USERNAME_HINT = /(^|\s)(username|email)(\s|$)/;
 
 function isVisible(el: HTMLElement): boolean {
   if (typeof el.checkVisibility === "function" && !el.checkVisibility()) return false;
   const style = getComputedStyle(el);
-  return style.display !== "none" && style.visibility !== "hidden";
+  if (style.display === "none" || style.visibility === "hidden") return false;
+  return parseFloat(style.opacity) !== 0;
 }
 
 function isUsable(input: HTMLInputElement): boolean {

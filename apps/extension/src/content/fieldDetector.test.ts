@@ -30,10 +30,19 @@ test("falls back to the closest preceding text input when there is no hint", () 
   expect(findLoginFields()[0].username?.id).toBe("b");
 });
 
-test("works without a <form> tag by looking in nearby containers", () => {
-  page(`<div><div><input id="u" type="text"></div><div><input id="p" type="password"></div></div>`);
+test("works without a <form> tag by looking in the immediate container", () => {
+  page(`<div><input id="u" type="text"><input id="p" type="password"></div>`);
   const [fields] = findLoginFields();
   expect(fields.username?.id).toBe("u");
+});
+
+test("does not escalate beyond the immediate parent to an unrelated sibling section", () => {
+  page(`
+    <div id="page">
+      <header><input id="header-search" type="text"></header>
+      <main><section><div><input id="p" type="password"></div></section></main>
+    </div>`);
+  expect(findLoginFields()[0].username).toBeNull();
 });
 
 test("does not pick an input that comes after the password field", () => {
@@ -56,6 +65,20 @@ test("ignores password fields that are not visible", () => {
   page(`<form><input id="p" type="password" style="display:none"></form>`);
   expect(findLoginFields()).toEqual([]);
 });
+
+test("ignores password fields hidden via opacity:0", () => {
+  page(`<form><input id="p" type="password" style="opacity:0"></form>`);
+  expect(findLoginFields()).toEqual([]);
+});
+
+// A zero-size-but-display:block password field (e.g. `width:0;height:0`) is not
+// covered by a test here: jsdom does not implement CSS layout, so
+// getBoundingClientRect()/offsetWidth/offsetHeight return an all-zero box for every
+// element regardless of its actual styling (verified directly against this
+// project's jsdom version). A size-based check could not be told apart from a
+// false positive on every other input in this suite, so it was deliberately left
+// out of `isVisible` rather than shipped untested — see the Task 11 fix report for
+// details.
 
 test("handles several forms independently", () => {
   page(`
