@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { View } from "react-native";
 import { useVault } from "@/context/VaultContext";
 import { Button } from "@/components/button";
+import { KeyboardSafeForm } from "@/components/keyboard-safe-form";
 import { ThemedText } from "@/components/themed-text";
 import { colors, spacing } from "@/theme";
 import type { VaultEntryContent } from "@/context/vaultEntry";
@@ -45,7 +46,7 @@ export default function ConflictScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.systemBackground, padding: spacing.lg, gap: spacing.md }}>
+    <KeyboardSafeForm>
       <ThemedText variant="largeTitle">Resolve conflict</ThemedText>
       <ThemedText variant="subhead">
         This entry was changed on another device too. Choose which version to keep.
@@ -54,6 +55,6 @@ export default function ConflictScreen() {
       <EntrySummary label="Theirs" content={conflict.theirs} />
       <Button title="Keep mine" onPress={() => handleResolve("mine")} />
       <Button title="Keep theirs" variant="secondary" onPress={() => handleResolve("theirs")} />
-    </View>
+    </KeyboardSafeForm>
   );
 }

@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Alert, TextInput, View } from "react-native";
+import { Alert, TextInput } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import { useVault } from "@/context/VaultContext";
 import { deriveKeys } from "@/crypto/deriveKeys";
 import { deleteAccount, ApiError } from "@/api/auth";
 import { Button } from "@/components/button";
+import { KeyboardSafeForm } from "@/components/keyboard-safe-form";
 import { ThemedText } from "@/components/themed-text";
 import { colors, spacing } from "@/theme";
 
@@ -63,7 +64,7 @@ export default function DeleteAccountScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.systemBackground, padding: spacing.lg, gap: spacing.md }}>
+    <KeyboardSafeForm>
       <ThemedText variant="largeTitle">Delete account</ThemedText>
       <ThemedText variant="subhead">
         Enter your master password to permanently delete your account and every entry in your vault.
@@ -83,6 +84,6 @@ export default function DeleteAccountScreen() {
         </ThemedText>
       ) : null}
       <Button title="Delete my account" variant="secondary" loading={loading} onPress={confirmDelete} />
-    </View>
+    </KeyboardSafeForm>
   );
 }

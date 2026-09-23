@@ -16,6 +16,22 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+// Regression test for the missing-submit-button bug: a long form (5 fields
+// plus a title and a delete button) must be scrollable, or the later fields
+// and the buttons below them can end up unreachable off-screen.
+test("is wrapped in the keyboard-safe scroll container", async () => {
+  (useVault as jest.Mock).mockReturnValue({
+    entries: [{ id: "1", content: { title: "GitHub", password: "hunter2" }, syncStatus: "synced" }],
+    updateEntry: jest.fn(),
+    deleteEntry: jest.fn(),
+  });
+  const EntryDetailScreen = getEntryDetailScreen();
+
+  await render(<EntryDetailScreen />);
+
+  expect(screen.getByTestId("keyboard-safe-scroll")).toBeTruthy();
+});
+
 test("renders the entry's title and a pre-filled form when found", async () => {
   (useVault as jest.Mock).mockReturnValue({
     entries: [{ id: "1", content: { title: "GitHub", username: "me", password: "hunter2" }, syncStatus: "synced" }],

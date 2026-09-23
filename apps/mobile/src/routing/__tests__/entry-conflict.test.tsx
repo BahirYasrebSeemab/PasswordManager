@@ -15,6 +15,21 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+// Regression test for the missing-submit-button class of bug: two full entry
+// cards (title/username/password/url/notes each) plus two buttons can easily
+// exceed a small screen's height, especially with a long notes field.
+test("is wrapped in the keyboard-safe scroll container", async () => {
+  (useVault as jest.Mock).mockReturnValue({
+    getConflict: () => ({ mine: { title: "A", password: "1" }, theirs: { title: "B", password: "2" } }),
+    resolveConflict: jest.fn(),
+  });
+  const ConflictScreen = getConflictScreen();
+
+  await render(<ConflictScreen />);
+
+  expect(screen.getByTestId("keyboard-safe-scroll")).toBeTruthy();
+});
+
 test("shows both versions side by side when there is a conflict", async () => {
   (useVault as jest.Mock).mockReturnValue({
     getConflict: () => ({

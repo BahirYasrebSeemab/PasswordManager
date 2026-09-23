@@ -77,6 +77,19 @@ afterEach(() => {
 // a real cross-test failure. Combining changeText, press, and the await
 // into a single act() scope avoids the corruption entirely; confirmed this
 // combination does not affect the assertions' meaning, only their timing.
+// Regression test for the missing-submit-button bug: the screen must be
+// wrapped in the keyboard-safe scroll container, or the button can be
+// pushed off-screen by the keyboard with no way to reach it.
+test("is wrapped in the keyboard-safe scroll container", async () => {
+  (useAuth as jest.Mock).mockReturnValue({ user: USER, accessToken: "tok", logout: jest.fn() });
+  (useVault as jest.Mock).mockReturnValue({ deleteLocalVault: jest.fn() });
+  const DeleteAccountScreen = getDeleteAccountScreen();
+
+  await render(<DeleteAccountScreen />);
+
+  expect(screen.getByTestId("keyboard-safe-scroll")).toBeTruthy();
+});
+
 test("correct password deletes the account, wipes the local db, and logs out", async () => {
   const logout = jest.fn().mockResolvedValue(undefined);
   const deleteLocalVault = jest.fn().mockResolvedValue(undefined);

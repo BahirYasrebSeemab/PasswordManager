@@ -22,6 +22,18 @@ beforeEach(() => {
   (getAutoLockSeconds as jest.Mock).mockResolvedValue(30);
 });
 
+// Regression test for the missing-submit-button class of bug: five stacked
+// sections (biometric, four auto-lock presets, export, import, delete
+// account) can exceed a small screen's height, so this must be scrollable —
+// otherwise "Delete account" can end up unreachable.
+test("is wrapped in the keyboard-safe scroll container", async () => {
+  const SettingsScreen = getSettingsScreen();
+
+  await render(<SettingsScreen />);
+
+  expect(screen.getByTestId("keyboard-safe-scroll")).toBeTruthy();
+});
+
 test("shows the biometric toggle as enabled when available and on", async () => {
   const SettingsScreen = getSettingsScreen();
 

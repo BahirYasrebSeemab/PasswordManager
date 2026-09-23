@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { View, TextInput } from "react-native";
+import { TextInput } from "react-native";
 import { Link } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/api/auth";
 import { Button } from "@/components/button";
+import { KeyboardSafeForm } from "@/components/keyboard-safe-form";
 import { ThemedText } from "@/components/themed-text";
 import { colors, spacing } from "@/theme";
 
@@ -39,15 +40,7 @@ export default function LoginScreen() {
   }
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.systemBackground,
-        justifyContent: "center",
-        padding: spacing.lg,
-        gap: spacing.md,
-      }}
-    >
+    <KeyboardSafeForm contentStyle={{ justifyContent: "center" }}>
       <ThemedText variant="largeTitle">Unlock your vault</ThemedText>
       <TextInput
         placeholder="Email"
@@ -73,6 +66,6 @@ export default function LoginScreen() {
           Need an account? Register
         </ThemedText>
       </Link>
-    </View>
+    </KeyboardSafeForm>
   );
 }

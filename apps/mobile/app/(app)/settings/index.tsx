@@ -5,8 +5,9 @@ import * as SecureStore from "expo-secure-store";
 import { useAuth } from "@/context/AuthContext";
 import { getBiometricEnabled, getAutoLockSeconds, setAutoLockSeconds } from "@/settings/preferences";
 import { Button } from "@/components/button";
+import { KeyboardSafeForm } from "@/components/keyboard-safe-form";
 import { ThemedText } from "@/components/themed-text";
-import { colors, spacing } from "@/theme";
+import { spacing } from "@/theme";
 
 const AUTO_LOCK_PRESETS = [
   { label: "Immediately", seconds: 0 },
@@ -49,7 +50,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.systemBackground, padding: spacing.lg, gap: spacing.lg }}>
+    <KeyboardSafeForm contentStyle={{ gap: spacing.lg }}>
       <ThemedText variant="largeTitle">Settings</ThemedText>
 
       <View style={{ gap: spacing.sm }}>
@@ -91,6 +92,6 @@ export default function SettingsScreen() {
       <Link href="/settings/delete-account" asChild>
         <Button title="Delete account" variant="secondary" />
       </Link>
-    </View>
+    </KeyboardSafeForm>
   );
 }

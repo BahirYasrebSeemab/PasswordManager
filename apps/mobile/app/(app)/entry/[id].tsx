@@ -3,6 +3,7 @@ import { Alert, View } from "react-native";
 import { useVault } from "@/context/VaultContext";
 import { EntryForm } from "@/components/entry-form";
 import { Button } from "@/components/button";
+import { KeyboardSafeForm } from "@/components/keyboard-safe-form";
 import { ThemedText } from "@/components/themed-text";
 import { colors, spacing } from "@/theme";
 
@@ -21,7 +22,7 @@ export default function EntryDetailScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.systemBackground, padding: spacing.lg, gap: spacing.md }}>
+    <KeyboardSafeForm>
       <ThemedText variant="largeTitle">{entry.content.title}</ThemedText>
       <EntryForm
         initialValue={entry.content}
@@ -48,6 +49,6 @@ export default function EntryDetailScreen() {
           ]);
         }}
       />
-    </View>
+    </KeyboardSafeForm>
   );
 }
