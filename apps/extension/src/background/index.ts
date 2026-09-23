@@ -13,7 +13,7 @@ import { handleMessage, type RouterDeps } from "./router";
 import {
   clearSession,
   expireIfIdle,
-  saveSession,
+  replaceSessionIfLive,
   type KeyValueStore,
 } from "./session";
 import { getAutoLockMinutes, setAutoLockMinutes } from "./settings";
@@ -47,7 +47,7 @@ const activeSession = createActiveSessionReader({
 
 const vault = createVaultService({
   getSession: activeSession,
-  replaceSession: (session) => saveSession(sessionStore, session),
+  replaceSession: (session) => replaceSessionIfLive(sessionStore, session),
   lock,
   api: {
     login,
@@ -91,7 +91,13 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
       await pending.clearAll();
     }
   } else if (alarm.name === CLIPBOARD_ALARM) {
-    await navigator.clipboard.writeText("");
+    try {
+      await navigator.clipboard.writeText("");
+    } catch {
+      // No user-facing surface to report a clipboard-clear failure from a background
+      // alarm; swallowing here just prevents an unhandled rejection from disrupting
+      // this listener's other branches.
+    }
   }
 });
 

@@ -3,6 +3,7 @@ import { handleMessage, type RouterDeps } from "./router";
 const extension = { extensionId: "ext@id", extensionOrigin: "moz-extension://abc/" };
 const popup = { id: "ext@id", url: "moz-extension://abc/popup.html" };
 const page = { id: "ext@id", url: "https://example.com/login", tab: { id: 7 } };
+const otherOriginPage = { id: "ext@id", url: "https://different-site.com/", tab: { id: 7 } };
 
 function makeDeps(overrides: Partial<RouterDeps> = {}) {
   const base = {
@@ -181,5 +182,85 @@ describe("pending save", () => {
     expect(await handleMessage({ type: "confirmSave" }, page, deps)).toEqual({ ok: false, error: "not_found" });
     expect(await handleMessage({ type: "dismissSave" }, page, deps)).toEqual({ ok: true });
     expect(deps.pending.discard).toHaveBeenCalledWith(7);
+  });
+
+  describe("cross-origin same-tab navigation must not leak or clear another origin's record", () => {
+    test("getPendingSave returns null for a sender whose origin doesn't match the record's", async () => {
+      const deps = makeDeps();
+      deps.pending.peek.mockResolvedValue(record);
+      expect(await handleMessage({ type: "getPendingSave" }, otherOriginPage, deps)).toEqual({ pending: null });
+    });
+
+    test("getPendingSave still returns the record for a matching-origin sender", async () => {
+      const deps = makeDeps();
+      deps.pending.peek.mockResolvedValue(record);
+      expect(await handleMessage({ type: "getPendingSave" }, page, deps)).toEqual({
+        pending: { kind: "save", username: "me", origin: "https://example.com" },
+      });
+    });
+
+    test("confirmSave is not_found for a mismatched origin and does not save or discard", async () => {
+      const deps = makeDeps();
+      deps.pending.peek.mockResolvedValue(record);
+      expect(await handleMessage({ type: "confirmSave" }, otherOriginPage, deps)).toEqual({
+        ok: false,
+        error: "not_found",
+      });
+      expect(deps.vault.saveNew).not.toHaveBeenCalled();
+      expect(deps.vault.saveUpdate).not.toHaveBeenCalled();
+      expect(deps.pending.discard).not.toHaveBeenCalled();
+    });
+
+    test("confirmSave still saves for a matching-origin sender", async () => {
+      const deps = makeDeps();
+      deps.pending.peek.mockResolvedValue(record);
+      expect(await handleMessage({ type: "confirmSave" }, page, deps)).toEqual({ ok: true });
+      expect(deps.vault.saveNew).toHaveBeenCalledWith("https://example.com/login", "me", "SECRET");
+    });
+
+    test("dismissSave is a no-op ok for a mismatched origin and does not discard", async () => {
+      const deps = makeDeps();
+      deps.pending.peek.mockResolvedValue(record);
+      expect(await handleMessage({ type: "dismissSave" }, otherOriginPage, deps)).toEqual({ ok: true });
+      expect(deps.pending.discard).not.toHaveBeenCalled();
+    });
+
+    test("dismissSave still discards for a matching-origin sender", async () => {
+      const deps = makeDeps();
+      deps.pending.peek.mockResolvedValue(record);
+      expect(await handleMessage({ type: "dismissSave" }, page, deps)).toEqual({ ok: true });
+      expect(deps.pending.discard).toHaveBeenCalledWith(7);
+    });
+  });
+});
+
+describe("unexpected exceptions resolve to a network error instead of a rejection", () => {
+  test("a synchronous throw from a dep resolves to { ok: false, error: 'network' }", async () => {
+    const deps = makeDeps();
+    deps.vault.listEntries.mockImplementation(() => {
+      throw new Error("boom");
+    });
+    await expect(handleMessage({ type: "listEntries" }, popup, deps)).resolves.toEqual({
+      ok: false,
+      error: "network",
+    });
+  });
+
+  test("a rejected promise from a dep resolves to { ok: false, error: 'network' }", async () => {
+    const deps = makeDeps();
+    deps.auth.status.mockRejectedValue(new Error("boom"));
+    await expect(handleMessage({ type: "getStatus" }, popup, deps)).resolves.toEqual({
+      ok: false,
+      error: "network",
+    });
+  });
+
+  test("a throw deep in a content-type message (pending store) resolves to network, not a rejection", async () => {
+    const deps = makeDeps();
+    deps.pending.peek.mockRejectedValue(new Error("boom"));
+    await expect(handleMessage({ type: "getPendingSave" }, page, deps)).resolves.toEqual({
+      ok: false,
+      error: "network",
+    });
   });
 });

@@ -4,6 +4,7 @@ import {
   expireIfIdle,
   getActiveSession,
   loadSession,
+  replaceSessionIfLive,
   saveSession,
   type Session,
 } from "./session";
@@ -73,4 +74,18 @@ test("expireIfIdle clears an expired session without extending a live one", asyn
   expect((await loadSession(store))?.lastActivityAt).toBe(1_000);
   expect(await expireIfIdle(store, 1_000 + 16 * MINUTE, 15)).toBe(true);
   expect(await loadSession(store)).toBeNull();
+});
+
+test("replaceSessionIfLive writes the new session when one is still live", async () => {
+  const store = createMemoryStore();
+  await saveSession(store, session);
+  const refreshed: Session = { ...session, accessToken: "new-tok" };
+  await replaceSessionIfLive(store, refreshed);
+  expect(await loadSession(store)).toEqual(refreshed);
+});
+
+test("replaceSessionIfLive does nothing when no session is live (cleared or never logged in)", async () => {
+  const store = createMemoryStore();
+  await replaceSessionIfLive(store, session);
+  expect(store.dump()).toEqual({});
 });

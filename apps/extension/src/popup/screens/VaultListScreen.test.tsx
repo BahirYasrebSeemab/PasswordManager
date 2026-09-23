@@ -60,3 +60,15 @@ test("Log out sends logout and calls onLocked", async () => {
   await waitFor(() => expect(send).toHaveBeenCalledWith({ type: "logout" }));
   await waitFor(() => expect(onLocked).toHaveBeenCalled());
 });
+
+test("Log out still locks the UI (fails closed) even when sendMessage rejects", async () => {
+  const onLocked = vi.fn();
+  send.mockImplementation(async (m: { type: string }) => {
+    if (m.type === "logout") throw new Error("network down");
+    return m.type === "listEntries" ? { ok: true, entries } : { ok: true };
+  });
+  render(<VaultListScreen onSelect={vi.fn()} onLocked={onLocked} />);
+  await screen.findByText("GitHub");
+  await userEvent.click(screen.getByRole("button", { name: "Log out" }));
+  await waitFor(() => expect(onLocked).toHaveBeenCalled());
+});

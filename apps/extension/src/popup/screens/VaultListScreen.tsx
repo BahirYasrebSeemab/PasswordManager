@@ -39,7 +39,12 @@ export function VaultListScreen({ onSelect, onLocked }: Props) {
   }, [entries, query]);
 
   async function logout() {
-    await sendMessage({ type: "logout" });
+    try {
+      await sendMessage({ type: "logout" });
+    } catch {
+      // fail closed: even if we couldn't confirm the background cleared the
+      // session, never leave the user staring at what looks like an unlocked vault
+    }
     onLocked();
   }
 

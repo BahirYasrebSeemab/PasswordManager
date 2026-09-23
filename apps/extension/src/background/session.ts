@@ -66,6 +66,15 @@ export async function clearSession(store: KeyValueStore): Promise<void> {
   await store.remove(SESSION_KEY);
 }
 
+// Writes back a refreshed session only if one is still live — guards against
+// resurrecting a session a concurrent logout/lock cleared while this write
+// was in flight (e.g. during a silent re-login's network round trips).
+export async function replaceSessionIfLive(store: KeyValueStore, session: Session): Promise<void> {
+  const current = await loadSession(store);
+  if (!current) return;
+  await saveSession(store, session);
+}
+
 function isIdle(session: Session, now: number, autoLockMinutes: number): boolean {
   return now - session.lastActivityAt > autoLockMinutes * MINUTE_MS;
 }

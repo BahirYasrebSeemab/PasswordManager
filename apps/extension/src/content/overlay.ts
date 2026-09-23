@@ -24,16 +24,16 @@ export interface Overlay {
 const STYLE = `
   :host { all: initial; }
   * { box-sizing: border-box; font: 13px system-ui, sans-serif; }
-  button.icon { position: fixed; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px;
+  button.icon { position: fixed; z-index: 2147483647; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px;
     background: #2456d6; color: #fff; font-size: 9px; font-weight: 700; cursor: pointer; }
-  .picker { position: fixed; min-width: 220px; max-width: 320px; background: #fff; color: #1a1a1a;
+  .picker { position: fixed; z-index: 2147483647; min-width: 220px; max-width: 320px; background: #fff; color: #1a1a1a;
     border: 1px solid #c8c8c8; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.2); padding: 4px; }
   .picker .empty { padding: 8px; color: #555; }
   button.item { display: block; width: 100%; text-align: left; padding: 6px 8px; border: 0; border-radius: 6px;
     background: transparent; color: inherit; cursor: pointer; }
   button.item:hover { background: #eef2ff; }
   button.item .sub { color: #666; font-size: 12px; }
-  .banner { position: fixed; top: 12px; right: 12px; display: flex; gap: 8px; align-items: center;
+  .banner { position: fixed; z-index: 2147483647; top: 12px; right: 12px; display: flex; gap: 8px; align-items: center;
     max-width: 380px; padding: 10px 12px; background: #fff; color: #1a1a1a; border: 1px solid #c8c8c8;
     border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
   .banner button { padding: 4px 10px; border: 1px solid #c8c8c8; border-radius: 6px; background: #fff; color: #1a1a1a; cursor: pointer; }
