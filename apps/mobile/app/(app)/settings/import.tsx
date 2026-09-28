@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { View } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { useVault } from "@/context/VaultContext";
 import { parseImportCsv, importEntries } from "@/import-export/importVault";
 import { Button } from "@/components/button";
+import { Spotlight } from "@/components/spotlight";
 import { ThemedText } from "@/components/themed-text";
-import { colors, spacing } from "@/theme";
+import { spacing } from "@/theme";
 
 export default function ImportScreen() {
   const { createEntry } = useVault();
@@ -33,7 +33,7 @@ export default function ImportScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.systemBackground, padding: spacing.lg, gap: spacing.md }}>
+    <Spotlight contentStyle={{ padding: spacing.lg, gap: spacing.md }}>
       <ThemedText variant="largeTitle">Import vault</ThemedText>
       <ThemedText variant="subhead">
         Pick a CSV file exported from Chrome or Firefox. Imported entries aren't checked against your
@@ -46,6 +46,6 @@ export default function ImportScreen() {
         </ThemedText>
       ) : null}
       <Button title="Choose file" loading={loading} onPress={handleImport} />
-    </View>
+    </Spotlight>
   );
 }

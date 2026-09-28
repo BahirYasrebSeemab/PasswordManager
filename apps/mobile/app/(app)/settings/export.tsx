@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { View } from "react-native";
 import { useVault } from "@/context/VaultContext";
 import { exportVaultToCsv } from "@/import-export/exportVault";
 import { Button } from "@/components/button";
+import { Spotlight } from "@/components/spotlight";
 import { ThemedText } from "@/components/themed-text";
-import { colors, spacing } from "@/theme";
+import { spacing } from "@/theme";
 
 export default function ExportScreen() {
   const { entries } = useVault();
@@ -24,7 +24,7 @@ export default function ExportScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.systemBackground, padding: spacing.lg, gap: spacing.md }}>
+    <Spotlight contentStyle={{ padding: spacing.lg, gap: spacing.md }}>
       <ThemedText variant="largeTitle">Export vault</ThemedText>
       <ThemedText variant="subhead">
         Saves a CSV file with every entry's title, URL, username, and password in plain text — share it
@@ -36,6 +36,6 @@ export default function ExportScreen() {
         </ThemedText>
       ) : null}
       <Button title="Export" loading={loading} onPress={handleExport} />
-    </View>
+    </Spotlight>
   );
 }

@@ -1,40 +1,46 @@
-import { Platform, useColorScheme } from "react-native";
+import { useColorScheme } from "react-native";
 
+// Pure grayscale only — no hue anywhere, by design (see the monochrome
+// "spotlight" theme). Every value here is R=G=B so there's no warm/cool
+// tint hiding in what looks like a neutral gray.
 const palette = {
   dark: {
     label: "#FFFFFF",
-    secondaryLabel: "#A0A0A8",
-    separator: "#2C2C30",
-    systemBackground: "#0B0B0E",
+    secondaryLabel: "#999999",
+    separator: "#333333",
+    systemBackground: "#000000",
   },
   light: {
-    label: "#1A1612",
-    secondaryLabel: "#6B6560",
-    separator: "#E8E2D8",
-    systemBackground: "#FAF6EE",
+    label: "#000000",
+    secondaryLabel: "#666666",
+    separator: "#DDDDDD",
+    systemBackground: "#FFFFFF",
   },
 } as const;
 
-export function useThemeColors() {
+export interface ThemeColors {
+  label: string;
+  secondaryLabel: string;
+  separator: string;
+  systemBackground: string;
+}
+
+export function useThemeColors(): ThemeColors {
   const scheme = useColorScheme();
   return palette[scheme === "light" ? "light" : "dark"];
 }
 
-const brandPalette = {
-  light: { accent: "#8A5A1E", accentContrast: "#FFFFFF" },
-  dark: { accent: "#C9974C", accentContrast: "#1A1206" },
-} as const;
-
 export function useBrandColors() {
-  // Deliberately NOT scheme-aware: the static `colors` export above and
-  // typography.ts are both hardcoded to the dark palette (this app doesn't
-  // have a light theme yet), so switching just the accent pair here on
-  // light-mode devices produced a real contrast bug (light accent color
-  // rendered against the app's always-dark background). Always return the
-  // dark brand colors until the rest of the app supports light mode too.
-  return brandPalette.dark;
+  // Monochrome theme: there's no accent hue to speak of, so "brand" colors
+  // are just the theme's own foreground/background pair, inverted — e.g. a
+  // solid white pill with black text in dark mode, a solid black pill with
+  // white text in light mode.
+  const colors = useThemeColors();
+  return { accent: colors.label, accentContrast: colors.systemBackground };
 }
 
-// Static-safe default (dark), for token files that need a color at module
-// scope rather than inside a component — see theme/typography.ts.
+// Static-safe default (dark), for module-scope code that can't call a hook.
+// Components/screens should prefer useThemeColors() so they follow the
+// device's light/dark setting; this export exists only where that isn't
+// possible (see theme/typography.ts's structural-only tokens).
 export const colors = palette.dark;

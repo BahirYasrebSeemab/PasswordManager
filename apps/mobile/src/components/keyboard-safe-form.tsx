@@ -1,5 +1,6 @@
 import { KeyboardAvoidingView, Platform, ScrollView, StyleProp, ViewStyle } from "react-native";
-import { colors, spacing } from "@/theme";
+import { Spotlight } from "./spotlight";
+import { spacing } from "@/theme";
 
 // Every screen with a TextInput needs this: without it, opening the keyboard
 // pushes content below the visible area on iOS (which never resizes the
@@ -13,17 +14,16 @@ export function KeyboardSafeForm({
   contentStyle?: StyleProp<ViewStyle>;
 }) {
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.systemBackground }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView
-        testID="keyboard-safe-scroll"
-        contentContainerStyle={[{ flexGrow: 1, padding: spacing.lg, gap: spacing.md }, contentStyle]}
-        keyboardShouldPersistTaps="handled"
-      >
-        {children}
-      </ScrollView>
-    </KeyboardAvoidingView>
+    <Spotlight>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView
+          testID="keyboard-safe-scroll"
+          contentContainerStyle={[{ flexGrow: 1, padding: spacing.lg, gap: spacing.md }, contentStyle]}
+          keyboardShouldPersistTaps="handled"
+        >
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Spotlight>
   );
 }

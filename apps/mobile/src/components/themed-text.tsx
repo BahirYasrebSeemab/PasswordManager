@@ -1,10 +1,12 @@
 import { Text, TextProps } from "react-native";
-import { type } from "@/theme";
+import { type, typeColorRole, useThemeColors } from "@/theme";
 
 export function ThemedText({
   variant = "body",
   style,
   ...props
 }: TextProps & { variant?: keyof typeof type }) {
-  return <Text style={[type[variant], style]} {...props} />;
+  const colors = useThemeColors();
+  const color = colors[typeColorRole[variant]];
+  return <Text style={[type[variant], { color }, style]} {...props} />;
 }

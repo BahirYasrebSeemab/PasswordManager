@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { TextInput } from "react-native";
 import { Link } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/api/auth";
 import { Button } from "@/components/button";
+import { Input } from "@/components/input";
 import { KeyboardSafeForm } from "@/components/keyboard-safe-form";
 import { ThemedText } from "@/components/themed-text";
-import { colors, spacing } from "@/theme";
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -42,23 +41,15 @@ export default function LoginScreen() {
   return (
     <KeyboardSafeForm contentStyle={{ justifyContent: "center" }}>
       <ThemedText variant="largeTitle">Unlock your vault</ThemedText>
-      <TextInput
-        placeholder="Email"
-        placeholderTextColor={colors.secondaryLabel}
+      <Input
+        testID="input-email"
+        label="Email"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
-        style={{ color: colors.label, borderBottomWidth: 1, borderColor: colors.separator, paddingVertical: spacing.sm }}
       />
-      <TextInput
-        placeholder="Master password"
-        placeholderTextColor={colors.secondaryLabel}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={{ color: colors.label, borderBottomWidth: 1, borderColor: colors.separator, paddingVertical: spacing.sm }}
-      />
+      <Input testID="input-password" label="Master password" value={password} onChangeText={setPassword} password />
       {error && <ThemedText variant="subhead" style={{ color: "#E5484D" }}>{error}</ThemedText>}
       <Button title="Log in" onPress={handleSubmit} loading={loading} />
       <Link href="/(auth)/register" asChild>

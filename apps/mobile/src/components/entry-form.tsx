@@ -1,16 +1,10 @@
 import { useState } from "react";
-import { View, TextInput } from "react-native";
+import { View } from "react-native";
 import { Button } from "./button";
+import { Input } from "./input";
 import { ThemedText } from "./themed-text";
-import { colors, spacing } from "@/theme";
+import { spacing } from "@/theme";
 import type { VaultEntryContent } from "@/context/vaultEntry";
-
-const FIELD_STYLE = {
-  color: colors.label,
-  borderBottomWidth: 1,
-  borderColor: colors.separator,
-  paddingVertical: spacing.sm,
-};
 
 export function EntryForm({
   initialValue,
@@ -53,50 +47,11 @@ export function EntryForm({
 
   return (
     <View style={{ gap: spacing.md }}>
-      <TextInput
-        testID="input-title"
-        placeholder="Title"
-        placeholderTextColor={colors.secondaryLabel}
-        value={title}
-        onChangeText={setTitle}
-        style={FIELD_STYLE}
-      />
-      <TextInput
-        testID="input-username"
-        placeholder="Username"
-        placeholderTextColor={colors.secondaryLabel}
-        value={username}
-        onChangeText={setUsername}
-        autoCapitalize="none"
-        style={FIELD_STYLE}
-      />
-      <TextInput
-        testID="input-password"
-        placeholder="Password"
-        placeholderTextColor={colors.secondaryLabel}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={FIELD_STYLE}
-      />
-      <TextInput
-        testID="input-url"
-        placeholder="URL"
-        placeholderTextColor={colors.secondaryLabel}
-        value={url}
-        onChangeText={setUrl}
-        autoCapitalize="none"
-        style={FIELD_STYLE}
-      />
-      <TextInput
-        testID="input-notes"
-        placeholder="Notes"
-        placeholderTextColor={colors.secondaryLabel}
-        value={notes}
-        onChangeText={setNotes}
-        multiline
-        style={FIELD_STYLE}
-      />
+      <Input testID="input-title" label="Title" value={title} onChangeText={setTitle} />
+      <Input testID="input-username" label="Username" value={username} onChangeText={setUsername} autoCapitalize="none" />
+      <Input testID="input-password" label="Password" value={password} onChangeText={setPassword} password />
+      <Input testID="input-url" label="URL" value={url} onChangeText={setUrl} autoCapitalize="none" />
+      <Input testID="input-notes" label="Notes" value={notes} onChangeText={setNotes} multiline />
       {error ? (
         <ThemedText variant="subhead" style={{ color: "#E5484D" }}>
           {error}

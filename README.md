@@ -131,12 +131,41 @@ uv run uvicorn app.main:app --reload
 **Mobile:**
 ```bash
 cd apps/mobile
+cp .env.example .env   # point EXPO_PUBLIC_API_URL at your running backend
 bun install
 bun start
 ```
 
-Both apps have their own test suites (`pytest` for the backend, `bun x jest` for mobile) and their own `CLAUDE.md`/`AGENTS.md` with app-specific conventions.
+**Browser extension** (Zen/Firefox):
+```bash
+cd apps/extension
+cp .env.example .env   # point VITE_API_URL at your running backend
+bun install
+bun run build
+```
+Then open `about:debugging#/runtime/this-firefox` → "Load Temporary Add-on..." → select
+`apps/extension/dist/manifest.json`. See `apps/extension/README.md` for the full manual
+test checklist.
+
+Each app has its own test suite (`uv run pytest` for the backend, `bun x jest` for mobile,
+`bun test` for the extension) and its own `CLAUDE.md`/`AGENTS.md` with app-specific
+conventions.
 
 ## Design docs
 
 Every feature was designed before it was built — full specs and implementation plans live in `docs/superpowers/specs/` and `docs/superpowers/plans/`, including the rationale behind the crypto scheme, the offline-sync/conflict-resolution design, and the account-settings/import-export design.
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) — in particular, the ground rules around the
+zero-knowledge architecture and cross-client crypto consistency before touching anything
+security-sensitive.
+
+## Reporting a security issue
+
+Please don't open a public issue for a vulnerability — see [`SECURITY.md`](SECURITY.md)
+for how to report one privately.
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).

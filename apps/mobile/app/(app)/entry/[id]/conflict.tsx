@@ -3,11 +3,13 @@ import { View } from "react-native";
 import { useVault } from "@/context/VaultContext";
 import { Button } from "@/components/button";
 import { KeyboardSafeForm } from "@/components/keyboard-safe-form";
+import { Spotlight } from "@/components/spotlight";
 import { ThemedText } from "@/components/themed-text";
-import { colors, spacing } from "@/theme";
+import { spacing, useThemeColors } from "@/theme";
 import type { VaultEntryContent } from "@/context/vaultEntry";
 
 function EntrySummary({ label, content }: { label: string; content: VaultEntryContent }) {
+  const colors = useThemeColors();
   return (
     <View style={{ gap: spacing.xs, padding: spacing.md, borderWidth: 1, borderColor: colors.separator, borderRadius: 8 }}>
       <ThemedText variant="headline">{label}</ThemedText>
@@ -28,9 +30,9 @@ export default function ConflictScreen() {
 
   if (!conflict) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.systemBackground, justifyContent: "center", padding: spacing.lg }}>
+      <Spotlight contentStyle={{ justifyContent: "center", padding: spacing.lg }}>
         <ThemedText variant="body">No conflict to resolve.</ThemedText>
-      </View>
+      </Spotlight>
     );
   }
 

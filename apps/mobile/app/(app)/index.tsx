@@ -3,8 +3,9 @@ import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useVault } from "@/context/VaultContext";
 import { Button } from "@/components/button";
+import { Spotlight } from "@/components/spotlight";
 import { ThemedText } from "@/components/themed-text";
-import { colors, spacing } from "@/theme";
+import { spacing, useThemeColors } from "@/theme";
 
 const STATUS_LABEL: Record<string, string> = {
   synced: "",
@@ -16,9 +17,10 @@ export default function VaultListScreen() {
   const { logout } = useAuth();
   const { entries, isSyncing, refresh } = useVault();
   const router = useRouter();
+  const colors = useThemeColors();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.systemBackground, padding: spacing.lg, gap: spacing.md }}>
+    <Spotlight contentStyle={{ padding: spacing.lg, gap: spacing.md }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <ThemedText variant="largeTitle">Vault</ThemedText>
         <View style={{ flexDirection: "row", gap: spacing.sm }}>
@@ -55,6 +57,6 @@ export default function VaultListScreen() {
       <Link href="/entry/new" asChild>
         <Button title="Add entry" />
       </Link>
-    </View>
+    </Spotlight>
   );
 }

@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { Alert, TextInput } from "react-native";
+import { Alert } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import { useVault } from "@/context/VaultContext";
 import { deriveKeys } from "@/crypto/deriveKeys";
 import { deleteAccount, ApiError } from "@/api/auth";
 import { Button } from "@/components/button";
+import { Input } from "@/components/input";
 import { KeyboardSafeForm } from "@/components/keyboard-safe-form";
 import { ThemedText } from "@/components/themed-text";
-import { colors, spacing } from "@/theme";
 
 export default function DeleteAccountScreen() {
   const { user, accessToken, logout } = useAuth();
@@ -69,15 +69,7 @@ export default function DeleteAccountScreen() {
       <ThemedText variant="subhead">
         Enter your master password to permanently delete your account and every entry in your vault.
       </ThemedText>
-      <TextInput
-        testID="input-password"
-        placeholder="Master password"
-        placeholderTextColor={colors.secondaryLabel}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={{ color: colors.label, borderBottomWidth: 1, borderColor: colors.separator, paddingVertical: spacing.sm }}
-      />
+      <Input testID="input-password" label="Master password" value={password} onChangeText={setPassword} password />
       {error ? (
         <ThemedText variant="subhead" style={{ color: "#E5484D" }}>
           {error}

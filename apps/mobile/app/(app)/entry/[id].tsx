@@ -1,11 +1,12 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Alert, View } from "react-native";
+import { Alert } from "react-native";
 import { useVault } from "@/context/VaultContext";
 import { EntryForm } from "@/components/entry-form";
 import { Button } from "@/components/button";
 import { KeyboardSafeForm } from "@/components/keyboard-safe-form";
+import { Spotlight } from "@/components/spotlight";
 import { ThemedText } from "@/components/themed-text";
-import { colors, spacing } from "@/theme";
+import { spacing } from "@/theme";
 
 export default function EntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -15,9 +16,9 @@ export default function EntryDetailScreen() {
 
   if (!entry) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.systemBackground, justifyContent: "center", padding: spacing.lg }}>
+      <Spotlight contentStyle={{ justifyContent: "center", padding: spacing.lg }}>
         <ThemedText variant="body">Entry not found.</ThemedText>
-      </View>
+      </Spotlight>
     );
   }
 

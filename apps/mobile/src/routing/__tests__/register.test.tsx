@@ -2,6 +2,14 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react-
 import { useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/api/auth";
 
+// See delete-account.test.tsx for why: getRegisterScreen()'s deferred
+// require() below pays the one-time cost of transforming this screen's
+// import tree (now including Input, Spotlight, and
+// expo-linear-gradient/@expo/vector-icons) inside the first test's body,
+// which can exceed Jest's default 5000ms budget on a cold transform cache
+// alone.
+jest.setTimeout(15000);
+
 jest.mock("@/context/AuthContext");
 
 function getRegisterScreen() {
@@ -31,8 +39,8 @@ test("submitting valid credentials calls register with the entered email and pas
 
   await render(<RegisterScreen />);
   await act(async () => {
-    fireEvent.changeText(screen.getByPlaceholderText("Email"), "me@example.com");
-    fireEvent.changeText(screen.getByPlaceholderText("Master password"), "correct horse battery staple");
+    fireEvent.changeText(screen.getByTestId("input-email"), "me@example.com");
+    fireEvent.changeText(screen.getByTestId("input-password"), "correct horse battery staple");
   });
   fireEvent.press(screen.getByText("Register"));
 
@@ -51,8 +59,8 @@ test.each([
 
   await render(<RegisterScreen />);
   await act(async () => {
-    fireEvent.changeText(screen.getByPlaceholderText("Email"), "me@example.com");
-    fireEvent.changeText(screen.getByPlaceholderText("Master password"), "pw");
+    fireEvent.changeText(screen.getByTestId("input-email"), "me@example.com");
+    fireEvent.changeText(screen.getByTestId("input-password"), "pw");
   });
   fireEvent.press(screen.getByText("Register"));
 
@@ -66,8 +74,8 @@ test("a non-ApiError rejection (e.g. network failure) shows a connectivity messa
 
   await render(<RegisterScreen />);
   await act(async () => {
-    fireEvent.changeText(screen.getByPlaceholderText("Email"), "me@example.com");
-    fireEvent.changeText(screen.getByPlaceholderText("Master password"), "pw");
+    fireEvent.changeText(screen.getByTestId("input-email"), "me@example.com");
+    fireEvent.changeText(screen.getByTestId("input-password"), "pw");
   });
   fireEvent.press(screen.getByText("Register"));
 
