@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef, Re
 import { AppState, AppStateStatus } from "react-native";
 import { deriveKeys } from "@/crypto/deriveKeys";
 import { register as apiRegister, login as apiLogin, getMe, ApiError } from "@/api/auth";
-import { saveSession, loadSession, updateAccessToken, clearSession, shouldPersistSession } from "./session";
+import { saveSession, loadSession, clearSession, shouldPersistSession } from "./session";
 import { getAutoLockSeconds, setBiometricEnabled as setBiometricEnabledPref } from "@/settings/preferences";
 
 type Status = "loading" | "locked" | "unlocked";
@@ -70,7 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           const { access_token } = await apiLogin(stored.email, stored.authKey);
-          await updateAccessToken(access_token);
+          // Re-save the whole session (not a partial update — there's only
+          // one SecureStore key now) reusing the vaultKey/authKey/email
+          // already held in memory from loadSession() above, so this stays
+          // a single authenticated write instead of a read-then-write.
+          await saveSession({ ...stored, accessToken: access_token });
           const me = await getMe(access_token);
           setUser(me);
           setAccessToken(access_token);

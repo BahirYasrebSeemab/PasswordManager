@@ -213,7 +213,7 @@ test("unlockWithStoredSession() falls back to a full login when the cached token
     .mockRejectedValueOnce(new authApi.ApiError(401, "expired"))
     .mockResolvedValueOnce({ id: 1, email: "cached@example.com" });
   (authApi.login as jest.Mock).mockResolvedValue({ access_token: "fresh-token", token_type: "bearer" });
-  (session.updateAccessToken as jest.Mock).mockResolvedValue(undefined);
+  (session.saveSession as jest.Mock).mockResolvedValue(undefined);
 
   await render(
     <AuthProvider>
@@ -223,7 +223,12 @@ test("unlockWithStoredSession() falls back to a full login when the cached token
 
   await waitFor(() => expect(screen.getByTestId("status").props.children).toBe("unlocked"));
   expect(authApi.login).toHaveBeenCalledWith("cached@example.com", storedAuthKey);
-  expect(session.updateAccessToken).toHaveBeenCalledWith("fresh-token");
+  expect(session.saveSession).toHaveBeenCalledWith({
+    vaultKey: storedVaultKey,
+    authKey: storedAuthKey,
+    accessToken: "fresh-token",
+    email: "cached@example.com",
+  });
   expect(authApi.getMe).toHaveBeenCalledTimes(2);
   expect(authApi.getMe).toHaveBeenNthCalledWith(2, "fresh-token");
 });

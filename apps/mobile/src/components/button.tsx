@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, StyleProp, ViewStyle } from "react-native";
-import { radius, spacing, useBrandColors } from "@/theme";
+import { radius, spacing, useBrandColors, useThemeColors } from "@/theme";
 import { ThemedText } from "./themed-text";
 
 const sizes = {
@@ -25,9 +25,10 @@ export function Button({
   onPress?: () => void;
 }) {
   const brand = useBrandColors();
+  const colors = useThemeColors();
   const variants = {
-    primary: { backgroundColor: brand.accent, textColor: brand.accentContrast },
-    secondary: { backgroundColor: "transparent", textColor: brand.accent },
+    primary: { backgroundColor: brand.primaryFill, textColor: brand.primaryText },
+    secondary: { backgroundColor: "transparent", textColor: colors.label },
   } as const;
   const isDisabled = disabled || loading;
 

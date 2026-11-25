@@ -20,5 +20,12 @@ module.exports = {
   transformIgnorePatterns,
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    // react-native-safe-area-context's useSafeAreaInsets() throws without a
+    // SafeAreaProvider ancestor providing real native measurements, which
+    // Jest never has. See test/mocks/react-native-safe-area-context.js for
+    // why this is a hand-written mock rather than the library's own
+    // jest/mock.tsx (that one is default-export-only, which breaks this
+    // app's named imports).
+    "^react-native-safe-area-context$": "<rootDir>/test/mocks/react-native-safe-area-context.js",
   },
 };

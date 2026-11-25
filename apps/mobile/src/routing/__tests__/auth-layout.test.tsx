@@ -2,6 +2,12 @@ import { render, screen } from "@testing-library/react-native";
 import { Text } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 
+// See delete-account.test.tsx for why: every screen now renders through
+// Spotlight (gradient + safe-area-inset logic), so the first render's
+// deferred require() pays a one-time cold-transform cost that can exceed
+// Jest's default 5000ms budget on its own.
+jest.setTimeout(15000);
+
 jest.mock("@/context/AuthContext");
 
 // Mirrors app-layout.test.tsx's approach — see the detailed comments there

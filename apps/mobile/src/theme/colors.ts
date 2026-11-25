@@ -31,12 +31,19 @@ export function useThemeColors(): ThemeColors {
 }
 
 export function useBrandColors() {
-  // Monochrome theme: there's no accent hue to speak of, so "brand" colors
-  // are just the theme's own foreground/background pair, inverted — e.g. a
-  // solid white pill with black text in dark mode, a solid black pill with
-  // white text in light mode.
-  const colors = useThemeColors();
-  return { accent: colors.label, accentContrast: colors.systemBackground };
+  // Primary buttons always carry white text/spinner — a deliberate,
+  // scheme-independent choice, not a bug: an earlier version inverted the
+  // whole button (white pill + black text in dark mode), which on-device
+  // read as invisible against the dark page. Only the FILL changes between
+  // themes, so the button still visibly separates from its own page:
+  // a lighter-than-black "elevated surface" gray in dark mode, solid black
+  // in light mode (classic high-contrast call-to-action look either way).
+  const scheme = useColorScheme();
+  const isDark = scheme !== "light";
+  return {
+    primaryFill: isDark ? "#2C2C2E" : "#000000",
+    primaryText: "#FFFFFF",
+  };
 }
 
 // Static-safe default (dark), for module-scope code that can't call a hook.

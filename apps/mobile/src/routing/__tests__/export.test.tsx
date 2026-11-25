@@ -2,6 +2,12 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react-nativ
 import { useVault } from "@/context/VaultContext";
 import { exportVaultToCsv } from "@/import-export/exportVault";
 
+// See delete-account.test.tsx for why: every screen now renders through
+// Spotlight (gradient + safe-area-inset logic), so the first render's
+// deferred require() pays a one-time cold-transform cost that can exceed
+// Jest's default 5000ms budget on its own.
+jest.setTimeout(15000);
+
 jest.mock("@/context/VaultContext");
 jest.mock("@/import-export/exportVault");
 

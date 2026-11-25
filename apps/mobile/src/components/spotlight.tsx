@@ -1,5 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, useColorScheme, View, ViewStyle } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors } from "@/theme";
 
 interface SpotlightProps {
@@ -23,11 +24,16 @@ interface SpotlightProps {
 export function Spotlight({ children, intensity = 0.3, style, contentStyle }: SpotlightProps) {
   const scheme = useColorScheme();
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const glow = scheme === "light" ? "0, 0, 0" : "255, 255, 255";
 
   return (
     <View style={[{ flex: 1, backgroundColor: colors.systemBackground }, style]}>
-      <View style={[{ flex: 1 }, contentStyle]}>{children}</View>
+      {/* paddingTop goes on the CONTENT, not this outer view, so the
+          background/gradient still bleeds fully edge-to-edge behind the
+          notch/status bar — only the title/text/buttons get pushed clear
+          of it. */}
+      <View style={[{ flex: 1, paddingTop: insets.top }, contentStyle]}>{children}</View>
       <LinearGradient
         colors={[
           `rgba(${glow}, ${intensity})`,

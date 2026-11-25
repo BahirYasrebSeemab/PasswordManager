@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import { saveSession, loadSession, updateAccessToken, clearSession, shouldPersistSession } from "./session";
+import { saveSession, loadSession, clearSession, shouldPersistSession } from "./session";
 
 jest.mock("expo-secure-store");
 
@@ -38,20 +38,31 @@ test("saveSession then loadSession round-trips vaultKey, authKey, accessToken, a
   expect(loaded!.email).toBe("test@example.com");
 });
 
-test("saveSession requires biometric authentication on every stored key", async () => {
+// Regression test for the 4-fingerprint-prompts bug: everything must live
+// under ONE SecureStore key, because requireAuthentication: true makes each
+// separate get/set/delete call its own OS biometric challenge. Four keys
+// meant four prompts in a row to unlock; this pins it at one.
+test("saveSession writes everything under a single authenticated key", async () => {
   await saveSession({ vaultKey: VAULT_KEY, authKey: AUTH_KEY, accessToken: "token-1", email: "test@example.com" });
 
   const calls = (SecureStore.setItemAsync as jest.Mock).mock.calls;
-  expect(calls.length).toBe(4);
-  for (const [, , options] of calls) {
-    expect(options.requireAuthentication).toBe(true);
-  }
+  expect(calls.length).toBe(1);
+  expect(calls[0][2].requireAuthentication).toBe(true);
 });
 
-test("updateAccessToken replaces only the access token, leaving the keys intact", async () => {
+test("loadSession reads with a single authenticated call", async () => {
+  await saveSession({ vaultKey: VAULT_KEY, authKey: AUTH_KEY, accessToken: "token-1", email: "test@example.com" });
+  (SecureStore.getItemAsync as jest.Mock).mockClear();
+
+  await loadSession();
+
+  expect((SecureStore.getItemAsync as jest.Mock).mock.calls.length).toBe(1);
+});
+
+test("re-saving with a new access token replaces it while leaving the keys intact", async () => {
   await saveSession({ vaultKey: VAULT_KEY, authKey: AUTH_KEY, accessToken: "old-token", email: "test@example.com" });
 
-  await updateAccessToken("new-token");
+  await saveSession({ vaultKey: VAULT_KEY, authKey: AUTH_KEY, accessToken: "new-token", email: "test@example.com" });
   const loaded = await loadSession();
 
   expect(loaded!.accessToken).toBe("new-token");

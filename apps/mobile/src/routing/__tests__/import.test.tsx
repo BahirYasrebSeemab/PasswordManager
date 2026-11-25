@@ -4,6 +4,12 @@ import * as FileSystem from "expo-file-system/legacy";
 import { useVault } from "@/context/VaultContext";
 import { parseImportCsv, importEntries } from "@/import-export/importVault";
 
+// See delete-account.test.tsx for why: every screen now renders through
+// Spotlight (gradient + safe-area-inset logic), so the first render's
+// deferred require() pays a one-time cold-transform cost that can exceed
+// Jest's default 5000ms budget on its own.
+jest.setTimeout(15000);
+
 jest.mock("expo-document-picker");
 jest.mock("expo-file-system");
 jest.mock("@/context/VaultContext");
