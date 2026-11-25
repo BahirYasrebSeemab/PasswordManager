@@ -147,9 +147,26 @@ Then open `about:debugging#/runtime/this-firefox` → "Load Temporary Add-on..."
 `apps/extension/dist/manifest.json`. See `apps/extension/README.md` for the full manual
 test checklist.
 
-Each app has its own test suite (`uv run pytest` for the backend, `bun x jest` for mobile,
-`bun test` for the extension) and its own `CLAUDE.md`/`AGENTS.md` with app-specific
-conventions.
+## Run the tests
+
+About 500 tests across the three apps:
+
+```bash
+# Backend (75 tests). Needs a LOCAL Postgres: the suite refuses to run against a remote
+# database, because it creates and deletes users.
+cd apps/api
+export DATABASE_URL=postgresql+psycopg2://USER:PASSWORD@localhost:5432/pm_test
+uv run alembic upgrade head
+uv run pytest
+
+# Browser extension (255 tests, including crypto interop vectors shared with mobile)
+cd apps/extension && bun run test
+
+# Mobile (183 tests)
+cd apps/mobile && bun x jest
+```
+
+Each app also has its own `CLAUDE.md`/`AGENTS.md` with app-specific conventions.
 
 ## Design docs
 

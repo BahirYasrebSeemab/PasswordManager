@@ -1,3 +1,4 @@
+import os
 from collections.abc import Generator
 
 import pytest
@@ -6,9 +7,19 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.auth.models import User
+from app.core.config import get_settings
 from app.db.session import SessionLocal, get_db
 from app.main import app
 from app.vault.models import VaultEntry
+from tests.db_guard import assert_local_database
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    # Runs once, before any test can open a connection: refuse remote databases.
+    assert_local_database(
+        get_settings().database_url,
+        allow_remote=os.environ.get("ALLOW_REMOTE_TEST_DB") == "1",
+    )
 
 
 @pytest.fixture
